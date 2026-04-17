@@ -82,4 +82,4 @@ an enemy that has low-hp but is armed with armor, armor penetration towers can d
 an enemy that has high hp and armor, cooperation between towers is needed to defeat it
 
 8.rapid raider("r"): hp 400 armor 0 speed 2.0
-an enemy that runs extremely fast, it can easily reach the base camp, health the camp with vampire tower
+an enemy that runs extremely fast, it can easily reach the base camp, heal the camp with vampire tower
