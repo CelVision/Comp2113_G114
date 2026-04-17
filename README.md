@@ -69,7 +69,7 @@ most common enemies, run very fast, always appear in groups, can be easily kille
 3.fast scout("f"): hp 300  armor 0  speed 1.5
 an enemy that runs fast with medium hp, needs frost towers to slow it down
 
-4. orcs("o"): hp 400  armor 0  speed 0.8
+4.orcs("o"): hp 400  armor 0  speed 0.8
 an enemy that always appears in an army, walks slow but has high hp, can be killed quickly if they are in the range of the earthquake towers
 
 5.behemoth("b"): hp 1000 armor 0 speed 1.0
