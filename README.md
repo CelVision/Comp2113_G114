@@ -14,16 +14,20 @@ This is a tower defense game where players can accumulate currency to build defe
 
 Game Scene Arrangement
 
-1.base camp("[B]")  hp: 10/10 -> 7/10 -> 4/10 -> 1/10     
+1.base camp("[B]")  hp: 10/10 -> 7/10 -> 4/10 -> 1/10
+
 the target that the player must protect, every enemy that reaches it will cause one point damage to the base
 
-2.path("-")  hp: ∞     
+2.path("-")  hp: ∞
+
 the path restricts the enemy's movement
 
-3.The location where structures can be set (".")     
+3.The location where structures can be set (".")
+
 players can put structures on these area
 
-4.The location where structures can't be set("")     
+4.The location where structures can't be set("")
+
 players can't put structures on these area
 
 Defensive Structures
