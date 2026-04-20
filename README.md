@@ -32,43 +32,39 @@ players can't put structures on these area
 
 Defensive Structures
 
-1.currency generator("$")  cost: $50  hitpoints: 0  efficiency: $50/10s
-
-the most foundational tower, support the players with sufficient currency, unlocked in the first level
-
-2.arrow tower("A")  cost: $50  hitpoints: 100  attack speed: 1s  hitrange: 5
+1.arrow tower("A")  cost: $50  hitpoints: 100  attack speed: 1s  hitrange: 5
 
 a basic defensive tower, conducts single-target attack, has a middle range of attack, unlocked in the first level
 
-3.laser tower("L")  cost: $100  hitpoints: 50  attack speed: 1.5s  hitrange: ∞
+2.laser tower("L")  cost: $100  hitpoints: 50  attack speed: 1.5s  hitrange: ∞
 
 a denfensive tower that attacks all enemies in a row infront of it, unlocked in the second level
 
-4.frost tower("F")  cost: $50  hitpoints: 10  attack speed: 1s  hitrange: 5, 3*3  slowdown: 50%
+3.frost tower("F")  cost: $50  hitpoints: 10  attack speed: 1s  hitrange: 5, 3*3  slowdown: 50%
 
 a defensive tower that provides the players with crowd control ability, conducts multi-target attack, unlocked in the third level
 
-5.earthquake tower("E")  cost: $200  hitpoints: 100  attack speed: 1s  hitrange: 5
+4.earthquake tower("E")  cost: $200  hitpoints: 100  attack speed: 1s  hitrange: 5
 
 a defensive tower that conducts multi-target attack to enemies in a circle range, it can kill a group of low-hp enemies at once but the cost of it is rather high, unlocked in the fourth level
 
-6.currency recycler("_")  cost: $50 hitpoints: 0 efficiency: $20/enemy killed
+5.hell tower("H")  cost: $200  hitpoints: 50% of current hp(at least 50, atmost 500)  attack speed: 1s  hitrange: 5
 
-an upgrade accessory that allows a defensive tower to gain currency when killing enemies, it can effectively solve the problem of not having enough currency to build structures, unlocked in the fifth level
+a denfensive tower that conducts single-target attack with a percentage damage, it can easily deal with high-hp enemies, it will first attack the enemy with the highest hp within range, unlocked in the fifth level
 
-7.hell tower("H")  cost: $200  hitpoints: 50% of current hp(at least 50, atmost 500)  attack speed: 1s  hitrange: 5
+6.thief tower("T")  cost: $200  hitpoints:0  bonus: +25% currency gained  range: 5 
 
-a denfensive tower that conducts single-target attack with a percentage damage, it can easily deal with high-hp enemies, it will first attack the enemy with the highest hp within range, unlocked in the sixth level
+a defensive tower that increase the currency gained when killing the enemies, unlocked in the sixth level
 
-8.armor penetration tower("P")  cost: $150  hitpoints: 50(hp)/50(armor)  attackspeed: 1s  hitrange: 5
+7.armor penetration tower("P")  cost: $150  hitpoints: 50(hp)/50(armor)  attackspeed: 1s  hitrange: 5
 
 a defensive tower that conducts single-target attack and breaks the armor(the enemy only bears 1 point damage for every hit when the armor exists) of the enemies, unlocked in the seventh level
 
-9.war drum tower("D")  cost: $150  hitpoints: 0  bonus: 25%  range: 3
+8.war drum tower("D")  cost: $150  hitpoints: 0  bonus: +25% hitpoints range: 3
 
 a defensive tower that dooesn't attack but provides buffs to all towers within 5*5 area, unlocked in the eighth level
 
-10.vampire tower("V")  cost: $400  hitpoints: 100  attack speed: 1s  hitrange: 5  heal: 0.05% of the damage
+9.vampire tower("V")  cost: $400  hitpoints: 100  attack speed: 1s  hitrange: 5  heal: 0.05% of the damage
 
 a defensive tower that can heal the base camp for 0.05% of the damage it caused, in average, it can heal 1 hp for the base camp every 20 seconds, unlocked in the ninth level
 
