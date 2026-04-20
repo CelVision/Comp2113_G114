@@ -1,17 +1,22 @@
 arrow tower
-UUU
+<->
 | |
 ===
 
 laser tower
 <o>
 | |
-===
+^^^
 
 frost tower
 /*\
 | |
-===
+^^^
+
+earthquake tower
+<!>
+| |
+^^^
 
 hell tower
 <%>
@@ -21,7 +26,20 @@ hell tower
 thief tower
 <$>
 | |
+···
+
+armor penetration tower
+<^>
+| |
 ===
 
+war drum tower
+[ ]
+| |
+···
 
+vampire tower
+<+>
+| |
+===
 
