@@ -1,1 +1,59 @@
 This file is for UI design.
+
+The length of each column is one space, and the length of each line is one line break.
+
+For the game map, its size is 33 rows * 99 columns.
+
+The upper UI:2 lines
+The lower UI:
+
+
+Belike
+Player_Name                               Level 1                       Money: xxxx   HP: xxxx/xxxx
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
