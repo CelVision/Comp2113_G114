@@ -1,0 +1,33 @@
+1.pigman ("p") hp: 200 armor: 0 speed: 2
+
+2.houndling("h") hp: 150 armor: 0 speed: 4
+
+3.werewolf*("W") hp: 350 armor: 100 speed: 3
+
+an enemy that runs fast with medium hp, needs frost towers to slow it down
+
+4.mini mammon("m") hp: 500 armor: 0 speed: 1.5
+
+5.Armored mammon*("M") hp: 1000 armor:500 speed: 1.0
+
+an enemy that has high-hp, the hell towers can lower its hp in a short period of time
+
+6.Birdman ("^") hp: 150 armor: 0 speed: 2.0 [Flying]
+
+7.Batman ("’") hp: 50 armor: 0 speed: 5.0 [Flying]
+
+8.Pigman Berserker* ("P") hp: 400 armor: 400 speed: 2.0 -> 4.0 (no armor)
+
+9.Spiderman ("S") hp: 300 armor: 0 speed: 3 slow effect: 50% 3*3 5s
+
+10.Alpha Wolf ("A") hp: 500 armor: 200 speed: 1.5 summon cooldown: 5s
+Summon 2 houndlings.
+
+11.Dragon 
+(1) ("^D^") hp: 2000 armor: 0 speed: 1.5 
+damage area: 3*3 
+cooldown: 15s
+(2) ("D") hp: 2000 armor: 1000 speed: 1
+Slow effect: 50% full-screen 5s
+cooldown: 15s
+(3) ("!D!") hp: 1000 armor: 0 speed: 2
