@@ -4,13 +4,14 @@ The length of each column is one space, and the length of each line is one line 
 
 For the game map, its size is 33 rows * 99 columns.
 
-The upper UI:2 lines
-The lower UI:
-
-
+The upper UI:3 lines (including the dividing line)
 Belike
-Player_Name                               Level 1                       Money: xxxx   HP: xxxx/xxxx
+
+
+
+Player_Name                      Level 1 --- Wave xx/xx                Money: xxxxx   HP: xxxx/xxxx
 ---------------------------------------------------------------------------------------------------
+
 
 
 
@@ -45,14 +46,15 @@ Player_Name                               Level 1                       Money: x
 
 ---------------------------------------------------------------------------------------------------
  <->  <o>  /*\  <!>  <%>  <$>  <^>  [ ]  <+>                     
- | |  | |  | |  | |  | |  | |  | |  | |  | |               
+ | |  | |  | |  | |  | |  | |  | |  | |  | |                         Tab Q to check tower details
  ===  ^^^  ^^^  ^^^  ===  ...  ===  ...  ===
-  1    2    3    4    5    6    7    8    9
+  1    2    3    4    5    6    7    8    9                          Tab E to check monster details
  XXX  xxx  xxx  xxx  xxx  xxx  xxx  xxx  xxx
 
 
 
-
+The lower UI:  lines
+               left for tower type presentation (xxx stands for the money needed)
 
 
 
