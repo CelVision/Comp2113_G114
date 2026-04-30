@@ -1,0 +1,30 @@
+Level 1: Simple straight path withn only one turn
+
+-wave amount:4 waves
+1.1 pigman from row 3 left side
+  [wait for 5 seconds]
+
+2.1 pigman from row 2 left side
+  1 pigman from row 3 left side
+  1 pigman from row 4 left side
+  [wait for 8 seconds]
+
+3.1 pigman from row 2 left side
+  1 pigman from row 3 left side
+  1 pigman from row 4 left side
+  [wait for 3 seconds]
+  1 pigman from row 2 left side
+  1 pigman from row 3 left side
+  1 pigman from row 4 left side
+  [wait for 8seconds]
+
+4.1 pigman from row 2 left side
+  1 pigman from row 3 left side
+  1 pigman from row 4 left side
+  [wait for 3 seconds]
+  2 pigmen from row 2 left side
+  2 pigmen from row 3 left side
+  2 pigmen from row 4 left side
+
+
+[Level challeng strategy] get familiar with tower planting, plant as fast arrow towers as you can
