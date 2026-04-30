@@ -2,53 +2,7 @@
 // Each level has a different path configuration
 // This file defines the path patterns for each level
 
-Level 1: Simple straight path
-- Start: Left side (col 1)
-- End: Right side (col 97)
-- Path: Straight horizontal line at row 16
-- Difficulty: Easy
+Level 1: Simple straight path withn only one turn
 
-Level 2: Single curve
-- Starts at row 8, moves right with one gentle curve down
-- Path winds through middle area
-- Difficulty: Easy-Medium
-
-Level 3: Double wave
-- Path starts at row 10, curves down to row 20, then back up to row 12
-- Creates a wave-like pattern
-- Difficulty: Medium
-
-Level 4: Spiral path
-- Path spirals inward from left side
-- Multiple turns to challenge tower placement
-- Difficulty: Medium-Hard
-
-Level 5: Zig-zag pattern
-- Sharp zigzag movements across the map
-- Tests tower range and placement strategy
-- Difficulty: Hard
-
-Level 6: Maze-like path
-- Complex winding path with multiple directions
-- Tests advanced tower placement
-- Difficulty: Hard
-
-Level 7: Spiral with curve
-- Combines spiral and curved paths
-- Very complex routing
-- Difficulty: Very Hard
-
-Level 8: Random complex
-- Highly irregular path
-- Maximum difficulty for single-player levels
-- Difficulty: Very Hard
-
-Level 9: Ultimate maze
-- Most complex path pattern
-- Tests all tower types and strategy
-- Difficulty: Extreme
-
-Infinite Mode: Random generation
-- Path is randomly generated each wave
-- Increases difficulty with each wave
-- Infinite progression until defeat
+-wave amount:4 waves
+1.one pigman from 
