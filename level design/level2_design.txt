@@ -111,7 +111,7 @@ Level 2
   2 pigman from column 101 bottom side
   2 pigman from column 102 bottom side
 
-
+[level change strategy] use new tower: Laser Tower to hit an entire row in map to combat monster waves.
 
 
 
