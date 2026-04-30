@@ -7,7 +7,6 @@ Level 2
   [wait for 3 seconds]
   1 pigman from column 5 bottom side
   1 pigman from column 101 top side
-  [wait for 8 seconds]
 
 2.1 Houndling from column 5 top side
   1 Houndling from column 101 bottom side
@@ -23,7 +22,6 @@ Level 2
   1 pigman from column 100 top side
   1 pigman from column 101 top side
   1 pigman from column 102 top side
-  [wait for 10 seconds]
 
 3.1 Houndling from column 5 top side
   1 Houndling from column 101 bottom side
@@ -43,7 +41,6 @@ Level 2
   1 pigman from column 100 bottom side
   1 pigman from column 101 bottom side
   1 pigman from column 102 bottom side
-  [wait for 10 seconds]
 
 4.1 Houndling from column 4 top side
   1 Houndling from column 5 top side
@@ -83,7 +80,6 @@ Level 2
   1 pigman from column 100 bottom side
   1 pigman from column 101 bottom side
   1 pigman from column 102 bottom side
-  [wait for 10 seconds]
 
 5.2 Houndling from column 4 top side
   2 Houndling from column 5 top side
