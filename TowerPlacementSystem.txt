@@ -1,0 +1,143 @@
+=== TOWER PLACEMENT SYSTEM DOCUMENTATION ===
+
+IMPLEMENTED FEATURES:
+
+1. Tower Size: 3×3 Grid
+   - Each tower occupies a 3×3 area on the map
+   - Center cell displays tower symbol (A, L, F, etc.)
+   - Surrounding 8 cells show tower body (#)
+
+2. Selection System
+   - Arrow keys (↑ ↓ ← →) move the 3×3 selection bracket
+   - Selection is shown with CYAN color (─ and │ characters)
+   - Current position displayed at bottom
+
+3. Tower Preview
+   - Press number keys 1-9 to select a tower type
+   - Selected tower shows as YELLOW preview (█ █ █ █ A █ █ █ █)
+   - Flashing effect to indicate preview mode
+   - Tower info displayed: Name, Cost, Can Place status
+
+4. Placement Validation
+   - Towers cannot be placed on PATH tiles (yellow -)
+   - Towers cannot be placed on BASE camp (B)
+   - Towers cannot overlap with existing towers
+   - Towers must fit within map boundaries
+   - System checks entire 3×3 area for validity
+
+5. Tower Planting
+   - Press ENTER to plant tower at current position
+   - Deducts tower cost from player money
+   - Updates map with new tower
+   - Returns to selection mode for next tower
+
+6. Controls:
+   ↑ ↓ ← → : Move selection bracket around map
+   1-9     : Select tower type for preview
+   ENTER   : Plant tower (if valid & enough money)
+   Q       : Exit tower placement mode
+
+=== GAME STATE TRACKING ===
+
+Current Variables:
+- selRow, selCol: Current selection center position
+- previewTowerIndex: Which tower is being previewed (-1 for none)
+- showFlash: Whether to show flashing preview effect
+- money: Player's current currency
+- baseHP: Base camp health points
+
+=== MAP TILE TYPES ===
+
+PATH (─)      : Yellow - Enemy travel routes, cannot build here
+BUILDABLE (.) : Gray - Empty areas where towers can be placed
+TOWER (A/L/F/etc.) : White - Placed tower centers
+TOWER BODY (#): White - Part of placed tower structure
+BASE (B)      : Red - Base camp, cannot build here
+BLOCKED       : Space - Blocked areas outside playable region
+
+=== TOWER PLACEMENT ALGORITHM ===
+
+canPlaceTower(centerRow, centerCol, towerIndex):
+  1. Calculate 3×3 bounding box:
+     - startRow = centerRow - 1
+     - endRow = centerRow + 1
+     - startCol = centerCol - 1
+     - endCol = centerCol + 1
+  
+  2. Boundary check:
+     - Verify all cells stay within map bounds
+     - Must have 1-cell padding from edges
+  
+  3. Cell validation:
+     - Loop through all 9 cells in 3×3 area
+     - Check each cell type:
+       * PATH: Cannot place (return false)
+       * BASE: Cannot place (return false)
+       * TOWER: Cannot place (return false)
+       * BUILDABLE: OK to place
+  
+  4. Return: true if all cells valid, false otherwise
+
+placeTowerAt(centerRow, centerCol, towerIndex):
+  1. Validate placement (call canPlaceTower)
+  2. Set all 9 cells to TOWER type
+  3. Center cell gets tower symbol
+  4. Surrounding cells get '#' (tower body marker)
+  5. All cells store towerIndex reference
+
+=== RENDERING SYSTEM ===
+
+renderGameMapWithSelection(selRow, selCol, previewTowerIndex, flash):
+  For each tile in 33×99 grid:
+    1. Check if in 3×3 selection area
+    2. If in preview area and flashing:
+       - Display tower symbol in YELLOW
+    3. Else if in selection area:
+       - Display CYAN bracket characters
+    4. Else:
+       - Display normal tile (PATH, BUILDABLE, TOWER, etc.)
+       - Use appropriate color coding
+
+Flash Effect:
+  - Counter increments each frame
+  - Toggles every 10 frames: (counter / 10) % 2
+  - Creates blinking 3×3 preview effect
+
+Color Codes:
+  - PATH (YELLOW)      : Color 14
+  - BUILDABLE (GRAY)   : Color 8
+  - TOWER (WHITE)      : Color 15
+  - BASE (RED)         : Color 12
+  - SELECTION (CYAN)   : Color 11
+  - PREVIEW (YELLOW)   : Color 14
+
+=== GAME LOOP FLOW ===
+
+1. Initialize game map and variables
+2. Loop while placingTowers == true:
+   a. Increment flash counter
+   b. Clear screen
+   c. Display header (Player, Money, HP)
+   d. Render map with selection bracket
+   e. Show controls and tower info
+   f. Check keyboard input:
+      - Arrow keys: Move selection
+      - Numbers 1-9: Select tower preview
+      - Enter: Plant tower if valid & affordable
+      - Q: Exit placement mode
+   g. Continue loop
+
+3. On exit or space available, go to battle phase
+
+=== FUTURE ENHANCEMENTS ===
+
+- Sell tower for partial refund
+- Undo last tower placement
+- Show tower range/attack area
+- Tower upgrade system
+- Sound effects for placement
+- Rotate tower preview
+- Quick build shortcuts
+- Tower info tooltip on hover
+- Wave preview before start
+- Money earned from kills displayed

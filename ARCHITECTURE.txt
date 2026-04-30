@@ -1,0 +1,260 @@
+=== BYTE RUSH TOWER DEFENSE GAME ===
+=== DATA SYSTEM AND ARCHITECTURE ===
+
+PROJECT OVERVIEW:
+A Kingdom Rush-like tower defense game where:
+- Players protect a base camp from enemies
+- Enemies traverse along predefined yellow paths
+- Players place towers on buildable (gray) areas
+- Towers deal damage based on their type and enemy armor
+- 9 levels + 1 infinite mode with increasing difficulty
+
+=== FILES CREATED AND THEIR PURPOSES ===
+
+1. GameData.h
+   Purpose: Defines all C++ data structures
+   Contains:
+   - Tower struct: symbol, name, cost, hitpoints, attackSpeed, hitRange, ASCII art, description, special properties
+   - Mob struct: symbol, name, hp, armor, speed, description, special effects
+   - TileType enum: BLOCKED, PATH, BUILDABLE, TOWER, BASE
+   - Tile struct: type, displayChar, towerIndex, mobIndex
+   - GameMap struct: 33×99 grid, pathCoordinates vector
+   - GameState struct: player info, level, money, hp, score
+   - Wave struct: wave info and mob spawns
+
+2. GameMap.cpp (Header-like implementation file)
+   Purpose: Game logic and map rendering
+   Key Classes:
+   - GameMapManager: Manages map state and rendering
+   
+   Key Functions:
+   - loadTowerData(): Populates 9 tower types with full stats
+   - loadMobData(): Populates 13 enemy types with full stats
+   - createPathForLevel(level): Generates unique path for each level 1-9
+   - generateWavyPath(level): Creates winding paths with increasing complexity
+   - renderGameMap(): Displays map with YELLOW paths, GRAY buildables, WHITE towers, RED base
+   - placeTower(): Validates and places tower on buildable tile
+   - initializeBuildableAreas(): Marks all non-path, non-base areas as buildable
+
+3. Game.cpp
+   Purpose: Main game loop and UI
+   Features:
+   - BYTE RUSH ASCII logo display
+   - Player name input screen
+   - Level selection UI (5×2 grid, arrow key navigation)
+   - Game map display with path rendering
+   - Tower selection menu
+   - Full game loop with menu returns
+
+4. Documentation Files:
+
+   TowerData.txt
+   - Complete specifications for all 9 towers
+   - Properties: cost, hp, attack speed, range, unlock level
+   - Special effects for each tower type
+
+   MobData.txt
+   - Complete specifications for all 13 enemies
+   - Properties: hp, armor, speed, flying status
+   - Special effects and counter-tower recommendations
+
+   LevelMaps.txt
+   - Path patterns for each level (1-9)
+   - Difficulty progression guide
+   - Infinite mode description
+
+   GameConfig.txt
+   - Data loading system overview
+   - File organization and dependencies
+   - Enhancement guidelines
+
+   DataSystemGuide.txt
+   - Compilation instructions
+   - How to add new content
+   - Balance parameters and tuning
+
+=== DATA FLOW ARCHITECTURE ===
+
+Startup Sequence:
+1. Game.cpp main() → gameLoop()
+2. displayStartScreen() → Player enters name
+3. displayLevelSelect() → Player selects level (1-10)
+4. displayGameScreen() → Create GameMapManager instance
+
+GameMapManager Initialization:
+1. initializeEmptyMap() → All tiles = BLOCKED
+2. loadTowerData() → 9 towers loaded from code
+3. loadMobData() → 13 mobs loaded from code
+4. createPathForLevel(level) → Generate path coordinates
+5. initializeBuildableAreas() → BLOCKED → BUILDABLE conversion
+6. setBaseCamp(row, col) → Place base camp
+7. renderGameMap() → Display with colors
+
+Rendering Pipeline:
+1. For each tile in 33×99 grid:
+   - PATH tiles: YELLOW color, '-' character
+   - BUILDABLE tiles: GRAY color, '.' character
+   - TOWER tiles: WHITE color, tower symbol
+   - BASE tiles: RED color, 'B' character
+   - BLOCKED tiles: BLACK (space character)
+
+2. Color System (Windows Console):
+   - 14: YELLOW (enemy paths)
+   - 8: GRAY (tower placement areas)
+   - 12: RED (base camp)
+   - 11: CYAN (selected areas)
+   - 15: WHITE (towers/normal text)
+
+=== TOWER SYSTEM ===
+
+9 Tower Types with unique mechanics:
+
+1. Arrow Tower (A) - $50
+   Basic single-target, middle range (5)
+
+2. Laser Tower (L) - $100
+   Row attack, infinite range
+
+3. Frost Tower (F) - $50
+   Multi-target, 50% slowdown, range 5
+
+4. Earthquake Tower (E) - $200
+   Multi-target circle, range 5
+
+5. Hell Tower (H) - $200
+   Single-target percentage damage, targets high-hp
+
+6. Thief Tower (T) - $200
+   +25% currency gain, no damage
+
+7. Armor Penetration Tower (P) - $150
+   Breaks enemy armor
+
+8. War Drum Tower (D) - $150
+   +25% hp buff for nearby towers
+
+9. Vampire Tower (V) - $400
+   Heals base camp 0.05% of damage
+
+=== ENEMY SYSTEM ===
+
+13 Enemy Types with escalating difficulty:
+
+Tier 1 (Easy):
+- Pigman (200 hp)
+- Houndling (150 hp, speed 4)
+
+Tier 2 (Medium):
+- Werewolf (350 hp, 100 armor)
+- Mini Mammon (500 hp)
+- Birdman (150 hp, flying)
+- Spiderman (300 hp, slows towers)
+
+Tier 3 (Hard):
+- Armored Mammon (1000 hp, 500 armor)
+- Batman (50 hp, flying, speed 5)
+- Pigman Berserker (400 hp, 400 armor)
+- Alpha Wolf (500 hp, summons units)
+
+Tier 4 (Boss):
+- Dragon Type 1 (2000 hp, area attack)
+- Dragon Type 2 (2000 hp, 1000 armor)
+- Dragon Type 3 (1000 hp, speed 2)
+
+=== LEVEL SYSTEM ===
+
+9 Levels + Infinite Mode:
+
+Level 1: Straight path, introduce mechanics
+Level 2: Single curve, basic combinations
+Level 3: Double wave, test placement strategy
+Level 4-8: Increasingly complex winding paths
+Level 9: Ultimate maze, comprehensive difficulty
+Infinite: Random path generation, endless waves
+
+Each level features:
+- Different path layout for strategic depth
+- Progressive enemy combinations
+- New tower unlock every level
+- Increasing base camp hp loss per level
+
+=== YELLOW PATH RENDERING IMPLEMENTATION ===
+
+The yellow path is created through:
+
+1. Path Generation:
+   pathCoordinates vector stores (row, col) pairs from start to end
+   generateWavyPath(level) creates increasingly complex patterns
+
+2. Map Storage:
+   Each grid tile stores its type (PATH, BUILDABLE, etc.)
+   PATH type tiles have displayChar = '-'
+
+3. Color Rendering:
+   renderGameMap() iterates all 33×99 tiles
+   For each PATH tile:
+   - setTextColor(COLOR_YELLOW) [color 14]
+   - cout << '-'
+   - resetTextColor()
+
+4. Visual Result:
+   Yellow dashes (-) form visible path on console
+   Mobs would follow this path from start to base camp
+
+=== COMPILATION AND EXECUTION ===
+
+Build:
+g++ Game.cpp -o Game.exe -std=c++11 -Wall
+
+Run:
+.\Game.exe
+
+Platform: Windows with MinGW/GCC
+No external dependencies
+
+=== EXTENSIBILITY ===
+
+Easy to add:
+
+New Tower:
+1. Add Tower entry in loadTowerData()
+2. Update TowerData.txt
+3. Define unlock level
+
+New Enemy:
+1. Add Mob entry in loadMobData()
+2. Update MobData.txt
+3. Define in which waves it appears
+
+New Level:
+1. Add path pattern in generateWavyPath()
+2. Define wave compositions
+3. Set difficulty parameters
+
+New Map Size:
+1. Update GameMap::ROWS and GameMap::COLS in GameData.h
+2. Adjust renderGameMap() accordingly
+3. Recompile
+
+=== SUMMARY ===
+
+The data system uses:
+✓ Modular architecture with separate concerns
+✓ Hard-coded data (no file I/O) for performance
+✓ Clear separation: data structures (GameData.h), logic (GameMap.cpp), UI (Game.cpp)
+✓ Windows console color API for visual feedback
+✓ Scalable design for future content
+✓ Yellow-colored paths for clear gameplay visibility
+✓ 9 levels + infinite mode
+✓ 9 tower types with unique mechanics
+✓ 13 enemy types with progression
+✓ Tower placement on gray buildable areas
+✓ Path following from entry to base camp
+
+The game is ready for:
+- Game loop implementation
+- Enemy spawning and movement
+- Tower targeting and damage
+- UI interaction (tower placement, wave progression)
+- Sound and visual effects
+- Scoring and leaderboard

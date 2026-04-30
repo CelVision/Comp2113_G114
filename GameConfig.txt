@@ -1,0 +1,112 @@
+=== GAME DATA STRUCTURE AND LOADING SYSTEM ===
+
+The BYTE RUSH game uses a modular data system with the following components:
+
+1. GameData.h
+   - Defines all data structures (Tower, Mob, GameMap, GameState, Wave)
+   - Tile types: BLOCKED, PATH, BUILDABLE, TOWER, BASE
+   - Contains enums and structs for game objects
+
+2. GameMap.cpp
+   - GameMapManager class that handles:
+     * Map initialization and rendering
+     * Path creation for each level
+     * Tower placement and management
+     * Mob spawn and tracking
+     * Console color utilities (ANSI-like colors for Windows)
+   
+   Key Functions:
+   - initializeEmptyMap(): Creates blank game board
+   - loadTowerData(): Populates tower stats
+   - loadMobData(): Populates enemy stats
+   - createPathForLevel(level, pathCoords): Generates path for selected level
+   - renderGameMap(): Displays map with colored paths (YELLOW)
+   - placeTower(row, col, towerIndex): Places tower on buildable area
+   - generateWavyPath(level): Creates winding paths based on difficulty
+
+3. Game.cpp
+   - Main game loop and UI
+   - Integrates GameMapManager to render game board
+   - Displays BYTE RUSH logo and start screen
+   - Level selection interface
+   - Game state management
+
+=== HOW DATA IS READ AND USED ===
+
+Tower Data Flow:
+1. GameMapManager::loadTowerData() → Hardcoded tower stats
+2. Tower struct contains all properties (cost, hp, range, etc.)
+3. renderGameMap() displays tower symbols on TOWER tiles
+4. Game uses tower properties for damage calculations and targeting
+
+Mob Data Flow:
+1. GameMapManager::loadMobData() → Hardcoded enemy stats
+2. Mob struct contains all properties (hp, armor, speed, special effects)
+3. Game spawns mobs along pathCoordinates
+4. Game calculates damage based on tower type vs mob armor
+
+Path Data Flow:
+1. createPathForLevel(level) → Generates path coordinates
+2. pathCoordinates vector stores (row, col) pairs for enemy movement
+3. PATH tiles are rendered in YELLOW color
+4. Mobs follow pathCoordinates from start to end (reaching BASE loses hp)
+
+Map Rendering Flow:
+1. initializeEmptyMap() → All BLOCKED tiles
+2. initializeBuildableAreas() → BLOCKED → BUILDABLE (. symbol)
+3. createPathForLevel() → BUILDABLE → PATH (- symbol) on path
+4. setBaseCamp() → BASE tile with B symbol
+5. placeTower() → BUILDABLE → TOWER (letter symbol)
+6. renderGameMap() → Display with colors:
+   - YELLOW: Path (enemies traverse here)
+   - GRAY: Buildable areas (place towers)
+   - WHITE: Towers
+   - RED: Base camp
+   - BLACK: Blocked areas
+
+=== COLOR CODING ===
+
+Windows Console Colors:
+- 14 (YELLOW): Enemy paths - Primary gameplay area
+- 10 (GREEN): Available resources
+- 12 (RED): Base camp / Low hp warning
+- 11 (CYAN): Selected/Highlighted areas
+- 8 (GRAY): Buildable areas where towers can be placed
+- 15 (WHITE): Towers and normal text
+- 0 (BLACK): Blocked areas
+
+=== GAME MAP SPECIFICATIONS ===
+
+Map Size: 33 rows × 99 columns
+Render Section: Rows 1-27 (playable area)
+UI Sections: Rows 28-33 (tower selection)
+
+File Organization:
+- towers.txt: ASCII art for tower display
+- mobs.txt: Mob descriptions and stats
+- TowerData.txt: Complete tower specifications
+- MobData.txt: Complete mob specifications
+- LevelMaps.txt: Level path patterns documentation
+- GameData.h: C++ data structures
+- GameMap.cpp: Game logic and rendering
+- Game.cpp: Main game loop and UI
+
+=== FUTURE ENHANCEMENTS ===
+
+To add new levels:
+1. Add path pattern in LevelMaps.txt
+2. Modify generateWavyPath(level) in GameMap.cpp
+3. Define wave compositions for new level
+4. Test and balance difficulty
+
+To add new towers:
+1. Add tower definition in loadTowerData()
+2. Update towers.txt with ASCII art
+3. Update TowerData.txt with documentation
+4. Add unlock condition to Game.cpp
+
+To add new enemies:
+1. Add mob definition in loadMobData()
+2. Update mobs.txt with ASCII representation
+3. Update MobData.txt with documentation
+4. Define waves where enemy appears

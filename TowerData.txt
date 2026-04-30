@@ -1,0 +1,124 @@
+=== TOWER DATA ===
+
+Tower 1: Arrow Tower
+Symbol: A
+Cost: $50
+Hitpoints: 100
+Attack Speed: 1.0s
+Hit Range: 5
+ASCII Art:
+  <->
+  | |
+  ===
+Description: Basic defensive tower, conducts single-target attack, has middle range of attack
+Unlock Level: 1
+
+Tower 2: Laser Tower
+Symbol: L
+Cost: $100
+Hitpoints: 50
+Attack Speed: 1.5s
+Hit Range: ∞ (infinite row)
+ASCII Art:
+  <o>
+  | |
+  ^^^
+Description: Attacks all enemies in a row in front of it
+Unlock Level: 2
+
+Tower 3: Frost Tower
+Symbol: F
+Cost: $50
+Hitpoints: 10
+Attack Speed: 1.0s
+Hit Range: 5, 3x3 area
+Slowdown: 50%
+ASCII Art:
+  /*\
+  | |
+  ^^^
+Description: Crowd control tower, conducts multi-target attack, slows enemies
+Unlock Level: 3
+
+Tower 4: Earthquake Tower
+Symbol: E
+Cost: $200
+Hitpoints: 100
+Attack Speed: 1.0s
+Hit Range: 5 (circle range)
+ASCII Art:
+  <!>
+  | |
+  ^^^
+Description: Conducts multi-target attack in circle range, kills groups of low-hp enemies
+Unlock Level: 4
+
+Tower 5: Hell Tower
+Symbol: H
+Cost: $200
+Hitpoints: 50% of current hp (min 50, max 500)
+Attack Speed: 1.0s
+Hit Range: 5
+Damage: Percentage-based
+ASCII Art:
+  <%>
+  | |
+  ===
+Description: Single-target attack with percentage damage, targets highest-hp enemy first
+Unlock Level: 5
+
+Tower 6: Thief Tower
+Symbol: T
+Cost: $200
+Hitpoints: 0
+Attack Speed: N/A
+Hit Range: 5
+Bonus: +25% currency gained
+ASCII Art:
+  <$>
+  | |
+  ...
+Description: Doesn't attack, increases currency gained when killing enemies
+Unlock Level: 6
+
+Tower 7: Armor Penetration Tower
+Symbol: P
+Cost: $150
+Hitpoints: 50 (hp and armor)
+Attack Speed: 1.0s
+Hit Range: 5
+Special: Breaks enemy armor
+ASCII Art:
+  <^>
+  | |
+  ===
+Description: Single-target attack that breaks enemy armor (armor reduces damage to 1 per hit)
+Unlock Level: 7
+
+Tower 8: War Drum Tower
+Symbol: D
+Cost: $150
+Hitpoints: 0
+Attack Speed: N/A
+Hit Range: 5 (buffs in 5x5 area)
+Bonus: +25% hitpoints for nearby towers
+ASCII Art:
+  [ ]
+  | |
+  ...
+Description: Doesn't attack but buffs all towers within 5x5 area with +25% HP
+Unlock Level: 8
+
+Tower 9: Vampire Tower
+Symbol: V
+Cost: $400
+Hitpoints: 100
+Attack Speed: 1.0s
+Hit Range: 5
+Heal: 0.05% of damage dealt
+ASCII Art:
+  <+>
+  | |
+  ===
+Description: Heals base camp for 0.05% of damage caused (avg 1 HP per 20 seconds)
+Unlock Level: 9

@@ -1,0 +1,147 @@
+=== MOB/ENEMY DATA ===
+
+Enemy 1: Pigman
+Symbol: p
+HP: 200
+Armor: 0
+Speed: 2.0
+Flying: No
+Description: Most common enemy, can be killed by arrow tower within 2 shots
+
+Enemy 2: Houndling
+Symbol: h
+HP: 150
+Armor: 0
+Speed: 4.0
+Flying: No
+Description: Fast common enemy, weak but quick
+
+Enemy 3: Werewolf
+Symbol: W
+HP: 350
+Armor: 100
+Speed: 3.0
+Flying: No
+Special: Needs frost towers to slow it down
+Description: Fast enemy with medium hp and armor
+
+Enemy 4: Mini Mammon
+Symbol: m
+HP: 500
+Armor: 0
+Speed: 1.5
+Flying: No
+Description: Slow high-hp enemy
+
+Enemy 5: Armored Mammon
+Symbol: M
+HP: 1000
+Armor: 500
+Speed: 1.0
+Flying: No
+Special: Hell towers can lower its hp quickly
+Description: High hp and armor, requires specialized tower types
+
+Enemy 6: Birdman
+Symbol: ^
+HP: 150
+Armor: 0
+Speed: 2.0
+Flying: Yes
+Description: Flying enemy, some towers may not hit it
+
+Enemy 7: Batman
+Symbol: '
+HP: 50
+Armor: 0
+Speed: 5.0
+Flying: Yes
+Description: Extremely fast flying enemy, low hp
+
+Enemy 8: Pigman Berserker
+Symbol: P
+HP: 400
+Armor: 400
+Speed: 2.0 (becomes 4.0 when armor is broken)
+Flying: No
+Description: Speeds up dramatically when armor is broken - dangerous when fully armored
+
+Enemy 9: Spiderman
+Symbol: S
+HP: 300
+Armor: 0
+Speed: 3.0
+Flying: No
+Slow Effect: 50% slowdown in 3x3 area for 5 seconds
+Description: Applies slow effect to towers, slowing their attack
+
+Enemy 10: Alpha Wolf
+Symbol: A
+HP: 500
+Armor: 200
+Speed: 1.5
+Flying: No
+Summon Cooldown: 5 seconds
+Summons: 2 Houndlings per summoning event
+Description: Boss-like enemy that summons reinforcements
+
+Enemy 11: Dragon Type 1
+Symbol: ^D^
+HP: 2000
+Armor: 0
+Speed: 1.5
+Flying: No
+Damage Area: 3x3
+Attack Cooldown: 15 seconds
+Description: Boss enemy with area damage attack
+
+Enemy 12: Dragon Type 2
+Symbol: D
+HP: 2000
+Armor: 1000
+Speed: 1.0
+Flying: No
+Slow Effect: 50% slowdown (full-screen) for 5 seconds
+Attack Cooldown: 15 seconds
+Description: Boss with high armor and screen-wide slow effect
+
+Enemy 13: Dragon Type 3
+Symbol: !D!
+HP: 1000
+Armor: 0
+Speed: 2.0
+Flying: No
+Description: Fast boss variant
+
+=== ENEMY DIFFICULTY LEVELS ===
+
+Tier 1 (Easy): Pigman, Houndling
+- Low hp, basic enemies for tutorial levels
+
+Tier 2 (Medium): Werewolf, Mini Mammon, Birdman, Spiderman
+- Moderate hp and speed, introduce armor and special abilities
+
+Tier 3 (Hard): Armored Mammon, Batman, Pigman Berserker, Alpha Wolf
+- High hp, armor, or special effects
+- Requires tower combinations to defeat
+
+Tier 4 (Boss): All Dragon types
+- Extremely high hp and armor
+- Special attack patterns
+- Late game challenge
+
+=== RECOMMENDED COUNTER TOWERS ===
+
+Pigman → Arrow Tower (2 shots), Laser Tower
+Houndling → Laser Tower, Frost Tower
+Werewolf → Frost Tower (to slow), Hell Tower
+Mini Mammon → Earthquake Tower, Hell Tower
+Armored Mammon → Hell Tower (percentage), Armor Penetration Tower
+Birdman → Laser Tower, Earthquake Tower
+Batman → Frost Tower (to catch), Laser Tower
+Pigman Berserker → Frost Tower (to prevent speedup), Armor Penetration Tower
+Spiderman → Multiple towers (to overcome slowdown)
+Alpha Wolf → Multiple towers (for adds)
+Dragon Type 1 → Earthquake Tower, Multiple towers
+Dragon Type 2 → Hell Tower, Armor Penetration Tower
+Dragon Type 3 → Laser Tower, Frost Tower

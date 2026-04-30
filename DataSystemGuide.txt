@@ -1,0 +1,117 @@
+=== HOW TO COMPILE AND RUN ===
+
+1. Compile the game:
+   g++ Game.cpp -o Game.exe -std=c++11 -Wall
+
+   Or using the Makefile:
+   make
+
+2. Run the game:
+   .\Game.exe
+
+   Or:
+   make run
+
+=== PROJECT FILE STRUCTURE ===
+
+Game Files:
+- Game.cpp: Main game loop, UI, and game flow
+- GameData.h: Data structure definitions
+- GameMap.cpp: Game map management and rendering (included as header)
+
+Documentation Files:
+- README.md: Game overview and features
+- GameConfig.txt: Data loading system documentation
+- TowerData.txt: All tower specifications and properties
+- MobData.txt: All enemy specifications and properties
+- LevelMaps.txt: Level path patterns and difficulty
+- UI_Design.txt: UI layout specifications
+
+Reference Files:
+- towers.txt: Tower ASCII art representations
+- mobs.txt: Enemy descriptions from design
+- Makefile: Build configuration
+
+=== DATA SYSTEM OVERVIEW ===
+
+The game uses a modular data system where:
+
+1. All tower and mob stats are defined in GameData.h and loaded in GameMap.cpp
+2. No external files are read at runtime (data is hardcoded for performance)
+3. The color system uses Windows console API for yellow paths, red base, etc.
+4. Map generation is algorithmic based on level number
+5. All game entities use struct-based systems for easy extension
+
+Key Features:
+✓ Yellow-colored paths for clear visibility
+✓ Gray-colored buildable areas
+✓ Red base camp indicator
+✓ Tower placement validation
+✓ Dynamic path generation per level
+✓ Support for 9 levels + infinite mode
+✓ 13 unique enemy types
+✓ 9 unique tower types with different mechanics
+
+=== ADDING NEW CONTENT ===
+
+To add a new Tower:
+1. Go to GameMap.cpp, function loadTowerData()
+2. Add new Tower struct entry with all properties
+3. Update towers.txt with ASCII art
+4. Update TowerData.txt with documentation
+
+To add a new Enemy:
+1. Go to GameMap.cpp, function loadMobData()
+2. Add new Mob struct entry with all properties
+3. Update mobs.txt with ASCII representation
+4. Update MobData.txt with documentation
+
+To add a new Level:
+1. Update LevelMaps.txt with level description
+2. Modify generateWavyPath() function in GameMap.cpp to add new path pattern for your level
+3. Define wave compositions in main game logic
+4. Test difficulty balance
+
+=== YELLOW PATH RENDERING ===
+
+The path rendering system:
+1. createPathForLevel(level) generates a list of (row, col) coordinates
+2. These coordinates are marked as PATH type in the tile grid
+3. renderGameMap() checks each tile type and:
+   - PATH tiles: Rendered in YELLOW (color code 14)
+   - BUILDABLE tiles: Rendered in GRAY (color code 8)
+   - TOWER tiles: Rendered in WHITE
+   - BASE tiles: Rendered in RED
+   - BLOCKED tiles: Rendered as space
+
+Console Output Example:
+- Yellow (-) characters show the path
+- Gray (.) characters show where towers can be placed
+- Red (B) shows the base camp
+- Letter characters (A, L, F, etc.) show placed towers
+
+=== GAME BALANCE PARAMETERS ===
+
+All balance parameters can be adjusted in loadTowerData() and loadMobData():
+- Tower costs (affects economy)
+- Tower damage/effects (affects difficulty)
+- Mob HP and armor (affects wave difficulty)
+- Mob speed (affects timing challenges)
+- Path patterns (affects strategic options)
+
+=== COMPILATION NOTES ===
+
+The project uses:
+- C++11 standard (-std=c++11)
+- Windows-specific headers (windows.h, conio.h)
+- Standard library containers (vector, string)
+- Console API for colors (Windows only)
+
+Platform: Windows with GCC/MinGW
+No external dependencies required
+
+Build Command:
+g++ Game.cpp -o Game.exe -std=c++11 -Wall
+
+Execution:
+.\Game.exe

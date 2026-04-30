@@ -46,9 +46,9 @@ Player_Name                      Level 1 --- Wave xx/xx                Money: xx
 
 ---------------------------------------------------------------------------------------------------
  <->  <o>  /*\  <!>  <%>  <$>  <^>  [ ]  <+>                     
- | |  | |  | |  | |  | |  | |  | |  | |  | |                         Tab Q to check tower details
+ | |  | |  | |  | |  | |  | |  | |  | |  | |                         Tap Q to check tower details
  ===  ^^^  ^^^  ^^^  ===  ...  ===  ...  ===
-  1    2    3    4    5    6    7    8    9                          Tab E to check monster details
+  1    2    3    4    5    6    7    8    9                          Tap E to check monster details
  XXX  xxx  xxx  xxx  xxx  xxx  xxx  xxx  xxx
 
 
