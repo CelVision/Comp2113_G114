@@ -2,7 +2,7 @@
 // Each level has a different path configuration
 // This file defines the path patterns for each level
 
-
+map size: 31 x 105
 
 
 
@@ -33,3 +33,88 @@ Level 1: Simple straight path withn only one turn
   2 pigmen from row 2 left side
   2 pigmen from row 3 left side
   2 pigmen from row 4 left side
+
+
+[Level challeng strategy] get familiar with tower planting, plant as fast arrow towers as you can
+
+
+Level 2
+
+-wave amount:5 waves 
+
+1.1 pigman from column 5 top side
+  1 pigman from column 101 bottom side
+  [wait for 3 seconds]
+  1 pigman from column 5 bottom side
+  1 pigman from column 101 top side
+  [wait for 8 seconds]
+
+2.1 Houndling from column 5 top side
+  1 Houndling from column 101 bottom side
+  [wait for 3 second]
+  1 Houndling from column 5 btop side
+  1 Houndling from column 101 bottom side
+  [wait for 8 seconds]
+  1 pigman from column 4 left side
+  1 pigman from column 5 left side
+  1 pigman from column 6 left side
+  1 pigman from column 4 left side
+  1 pigman from column 5 left side
+  1 pigman from column 6 left side
+  1 pigman from column 100 left side
+  1 pigman from column 101 left side
+  1 pigman from column 102 left side
+  1 pigman from column 100 left side
+  1 pigman from column 101 left side
+  1 pigman from column 102 left side
+  [wait for 10 seconds]
+
+3.1 Houndling from column 5 top side
+  1 Houndling from column 101 bottom side
+  [wait for 3 second]
+  1 Houndling from column 5 btop side
+  1 Houndling from column 101 bottom side
+  [wait for 8 seconds]
+  1 pigman from column 4 left side
+  1 pigman from column 5 left side
+  1 pigman from column 6 left side
+  1 pigman from column 4 left side
+  1 pigman from column 5 left side
+  1 pigman from column 6 left side
+  1 pigman from column 100 left side
+  1 pigman from column 101 left side
+  1 pigman from column 102 left side
+  1 pigman from column 100 left side
+  1 pigman from column 101 left side
+  1 pigman from column 102 left side
+  [wait for 10 seconds]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
