@@ -1,30 +1,107 @@
 Level 1: Simple straight path withn only one turn
 
--wave amount:6 waves
+-wave amount:7 waves
 1.1 pigman from row 23 left side
   [wait for 5 seconds]
   1 pigman from row 22 left side
   1 pigman from row 24 left side
-  [wait for 8 seconds]
 
-2.
+2.1 Houndling from row 22 left side
+  1 Houndling from row 23 left side
+  1 Houndling from row 24 left side
+  1 Werewolf from column 101 bottom side
+  [wait for 3 seconds]
+  1 Werewolf from column 108 top side
+  [wait for 3 seconds]
+  1 pigman from row 22 left side
+  1 pigman from row 23 left side
+  1 pigman from row 24 left side
+  1 Werewolf from column 110 bottom side
 
+3.1 Houndling from column 108 top side
+  1 Houndling from column 101 bottom side
 
+4.1 Houndling from row 22 left side
+  1 Houndling from row 23 left side
+  1 Houndling from row 24 left side
+  [wait for 1 second]
+  1 Werewolf from row 22 left side
+  1 Werewolf from row 23 left side
+  1 Werewolf from row 24 left side
+  [wait for 1 second]
+  1 pigman from row 22 left side
+  1 pigman from row 23 left side
+  1 pigman from row 24 left side
 
+5.2 Houndling from row 22 left side
+  2 Houndling from row 23 left side
+  2 Houndling from row 24 left side
+  1 Werewolf from column 101 bottom side
+  [wait for 5 seconds]
+  3 pigman from row 22 left side
+  3 pigman from row 23 left side
+  3 pigman from row 24 left side
+  [wait for 5 seconds]
+  1 Werewolf from column 108 top side
+  1 Werewolf from column 110 bottom side
+  1 pigman from row 22 left side
+  1 pigman from row 24 left side
 
+6.1 pigman from row 22 left side
+  1 pigman from row 23 left side
+  1 pigman from row 24 left side
+  1 Werewolf from column 110 bottom side
+  [wait for 1 second]
+  1 pigman from row 22 left side
+  1 pigman from row 23 left side
+  1 pigman from row 24 left side
+  1 Werewolf from column 108 top side
+  [wait for 1 second]
+  1 pigman from row 22 left side
+  1 pigman from row 23 left side
+  1 pigman from row 24 left side
+  1 Werewolf from column 101 bottom side
+  1 pigman from row 22 left side
+  1 pigman from row 23 left side
+  1 pigman from row 24 left side
+  1 Werewolf from column 110 bottom side
+  [wait for 1 second]
+  1 pigman from row 22 left side
+  1 pigman from row 23 left side
+  1 pigman from row 24 left side
+  1 Werewolf from column 108 top side
+  [wait for 1 second]
+  1 pigman from row 22 left side
+  1 pigman from row 23 left side
+  1 pigman from row 24 left side
+  1 Werewolf from column 101 bottom side
 
+7.1 Houndling from row 22 left side
+  1 Houndling from row 23 left side
+  1 Houndling from row 24 left side  
+  [wait for 1 second]
+  1 Houndling from row 22 left side
+  1 Houndling from row 23 left side
+  1 Houndling from row 24 left side  
+  [wait for 1 second]
+  1 Werewolf from row 22 left side
+  1 Werewolf from row 23 left side
+  1 Werewolf from row 24 left side
+  1 Werewolf from column 110 bottom side
+  1 Werewolf from column 101 bottom side
+  1 Werewolf from column 108 top side
+  [wait for 1 second]
+  1 Werewolf from row 22 left side
+  1 Werewolf from row 23 left side
+  1 Werewolf from row 24 left side
+  1 Werewolf from column 110 bottom side
+  1 Werewolf from column 101 bottom side
+  1 Werewolf from column 108 top side
+  [wait for 1 second]
+  1 pigman from row 22 left side
+  1 pigman from row 23 left side
+  1 pigman from row 24 left side
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+[Level Challenge Strategy] Use  Frost Tower to trap quick and tanky Werewolf in the branch road from top and bottom. 
+                           Use Laser tower to handle monster wave in the main road.
+                           The main challenge of this level lies in dealing with the main path and the branch paths simultaneously.
