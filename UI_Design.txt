@@ -9,7 +9,7 @@ Belike
 
 
 
-Player_Name                      Level 1 --- Wave xx/xx                Money: xxxxx   HP: xxxx/xxxx
+Player_Name                      Level x --- Wave xx/xx                Money: xxxxx   HP: xxxx/xxxx
 ---------------------------------------------------------------------------------------------------
 
 
@@ -21,17 +21,9 @@ Player_Name                      Level 1 --- Wave xx/xx                Money: xx
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+xxxxxxxxxxx
+          x
+          xxxxxxxxx
 
 
 
@@ -55,6 +47,97 @@ Player_Name                      Level 1 --- Wave xx/xx                Money: xx
 
 The lower UI:  lines
                left for tower type presentation (xxx stands for the money needed)
+
+
+Press Esc to enter the Pause Creen
+
+
+Player_Name                      Level x --- Wave xx/xx                Money: xxxxx   HP: xxxx/xxxx
+---------------------------------------------------------------------------------------------------
+
+
+
+
+         Pause Menu
+
+         Tab 1 to replay this level.
+
+         Tab 2 to exit the game.
+
+         
+ 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------
+ <->  <o>  /*\  <!>  <%>  <$>  <^>  [ ]  <+>                     
+ | |  | |  | |  | |  | |  | |  | |  | |  | |                         Tab Q to check tower details
+ ===  ^^^  ^^^  ^^^  ===  ...  ===  ...  ===
+  1    2    3    4    5    6    7    8    9                          Tab E to check monster details
+ XXX  xxx  xxx  xxx  xxx  xxx  xxx  xxx  xxx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
