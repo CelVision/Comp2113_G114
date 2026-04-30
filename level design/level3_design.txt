@@ -1,1 +1,30 @@
+Level 1: Simple straight path withn only one turn
+
+-wave amount:6 waves
+1.1 pigman from row 23 left side
+  [wait for 5 seconds]
+  1 pigman from row 22 left side
+  1 pigman from row 24 left side
+  [wait for 8 seconds]
+
+2.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
