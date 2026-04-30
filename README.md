@@ -70,34 +70,36 @@ a defensive tower that can heal the base camp for 0.05% of the damage it caused,
 
 Enemies Types
 
-1.goblins ("g")  hp: 200  armor: 0  speed: 1.0
+1.pigman ("p") hp: 200 armor: 0 speed: 2
 
-most common enemies, can be killed by arrow towera within 2 shots
+2.houndling("h") hp: 150 armor: 0 speed: 4
 
-2.skeletons("s")  hp: 100  armor: 0  speed: 1.5
-
-most common enemies, run very fast, always appear in groups, can be easily killed with laser towers
-
-3.fast scout("f")  hp: 300  armor: 0  speed: 1.5
+3.werewolf*("W") hp: 350 armor: 100 speed: 3
 
 an enemy that runs fast with medium hp, needs frost towers to slow it down
 
-4.orcs("o")  hp: 400  armor: 0  speed: 0.8
+4.mini mammon("m") hp: 500 armor: 0 speed: 1.5
 
-an enemy that always appears in an army, walks slow but has high hp, can be killed quickly if they are in the range of the earthquake towers
-
-5.behemoth("b")  hp: 1000  armor: 0  speed: 1.0
+5.Armored mammon*("M") hp: 1000 armor:500 speed: 1.0
 
 an enemy that has high-hp, the hell towers can lower its hp in a short period of time
 
-6.armored troops("a")  hp: 100  armor: 10  speed: 1.0
+6.Birdman ("^") hp: 150 armor: 0 speed: 2.0 [Flying]
 
-an enemy that has low-hp but is armed with armor, armor penetration towers can defeat them easily
+7.Batman ("’") hp: 50 armor: 0 speed: 5.0 [Flying]
 
-7.giant overlord("l")  hp: 2000  armor: 200  speed: 0.8
+8.Pigman Berserker* ("P") hp: 400 armor: 400 speed: 2.0 -> 4.0 (no armor)
 
-an enemy that has high hp and armor, cooperation between towers is needed to defeat it
+9.Spiderman ("S") hp: 300 armor: 0 speed: 3 slow effect: 50% 3*3 5s
 
-8.rapid raider("r")  hp: 400  armor: 0  speed: 2.0
+10.Alpha Wolf ("A") hp: 500 armor: 200 speed: 1.5 summon cooldown: 5s
+Summon 2 houndlings.
 
-an enemy that runs extremely fast, it can easily reach the base camp, heal the camp with vampire tower
+11.Dragon 
+(1) ("^D^") hp: 2000 armor: 0 speed: 1.5 
+damage area: 3*3 
+cooldown: 15s
+(2) ("D") hp: 2000 armor: 1000 speed: 1
+Slow effect: 50% full-screen 5s
+cooldown: 15s
+(3) ("!D!") hp: 1000 armor: 0 speed: 2
