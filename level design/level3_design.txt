@@ -18,8 +18,8 @@ Level 1: Simple straight path withn only one turn
   1 pigman from row 24 left side
   1 Werewolf from column 110 bottom side
 
-3.1 Houndling from column 108 top side
-  1 Houndling from column 101 bottom side
+3.2 Houndling from column 108 top side
+  2 Houndling from column 101 bottom side
 
 4.1 Houndling from row 22 left side
   1 Houndling from row 23 left side
