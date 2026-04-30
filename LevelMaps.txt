@@ -2,7 +2,7 @@
 // Each level has a different path configuration
 // This file defines the path patterns for each level
 
-map size: 31 x 105
+map size: 31 x 147
 
 
 
