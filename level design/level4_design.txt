@@ -1,1 +1,144 @@
+level 4
+
+6 waves
+
+1.1 pigman from row 7 left side
+  1 pigman from row 13 left side
+  1 pigman from row 19 left side
+  1 pigman from row 25 left side
+
+2.1 Houndling from row 7 left side
+  1 Houndling from row 13 left side
+  1 Houndling from row 14 left side
+  1 Werewolf from row 19 left side
+  1 Werewolf from row 25 left side
+  1 Werewolf from row 24 left side
+  [wait 3 minute]
+  1 pigman from row 7 left side
+  1 pigman from row 13 left side
+
+3.1 pigman from row 6 left side
+  1 pigman from row 7 left side
+  1 pigman from row 8 left side
+  1 Mini Mammon from row 7 left side
+  1 Houndling from row 24 left side
+  1 Houndling from row 25 left side
+  1 Houndling from row 26 left side
+  1 Werewolf from row 25 left side
+    
+4.1 pigman from row 6 left side
+  1 pigman from row 7 left side
+  1 pigman from row 8 left side
+  1 pigman from row 13 left side
+  1 pigman from row 14 left side
+  1 pigman from row 12 left side
+  1 pigman from row 19 left side
+  1 pigman from row 18 left side
+  1 pigman from row 20 left side
+  1 pigman from row 25 left side
+  1 pigman from row 23 left side
+  1 pigman from row 24 left side
+  [wait 1 second]
+  1 Mini Mammon from row 7 left side
+  1 Mini Mammon from row 13 left side
+  1 Mini Mammon from row 19 left side
+  1 Mini Mammon from row 25 left side
+  
+5.1 Houndling from row 6 left side
+  1 Houndling from row 7 left side
+  1 Houndling from row 8 left side
+  1 Houndling from row 13 left side
+  1 Houndling from row 14 left side
+  1 Houndling from row 12 left side
+  1 Houndling from row 19 left side
+  1 Houndling from row 18 left side
+  1 Houndling from row 20 left side
+  1 Houndling from row 25 left side
+  1 Houndling from row 23 left side
+  1 Houndling from row 24 left side
+  [wait 1 second]
+  1 Werewolf from row 7 left side
+  1 Werewolf from row 13 left side
+  1 Werewolf from row 19 left side
+  1 Werewolf from row 25 left side
+
+6.1 Houndling from row 6 left side
+  1 Houndling from row 7 left side
+  1 Houndling from row 8 left side
+  1 Houndling from row 13 left side
+  1 Houndling from row 14 left side
+  1 Houndling from row 12 left side
+  1 Houndling from row 19 left side
+  1 Houndling from row 18 left side
+  1 Houndling from row 20 left side
+  1 Houndling from row 25 left side
+  1 Houndling from row 23 left side
+  1 Houndling from row 24 left side
+  [wait 1 second]
+  1 Werewolf from row 7 left side
+  1 Werewolf from row 13 left side
+  1 Werewolf from row 19 left side
+  1 Werewolf from row 25 left side
+  [wait 1 second]
+  1 pigman from row 6 left side
+  1 pigman from row 7 left side
+  1 pigman from row 8 left side
+  1 pigman from row 13 left side
+  1 pigman from row 14 left side
+  1 pigman from row 12 left side
+  1 pigman from row 19 left side
+  1 pigman from row 18 left side
+  1 pigman from row 20 left side
+  1 pigman from row 25 left side
+  1 pigman from row 23 left side
+  1 pigman from row 24 left side
+  [wait 1 second]
+  1 Mini Mammon from row 7 left side
+  1 Mini Mammon from row 13 left side
+  1 Mini Mammon from row 19 left side
+  1 Mini Mammon from row 25 left side
+  [wait 1 minute]
+  1 Mini Mammon from row 7 left side
+  1 Mini Mammon from row 13 left side
+  1 Mini Mammon from row 19 left side
+  1 Mini Mammon from row 25 left side
+
+[Level Challenge Strategy] Use the Earthquake Tower to deal high damage to all enemies on the special map, and apply a slowing effect to specific fast-moving enemies.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
