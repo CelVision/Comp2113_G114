@@ -36,7 +36,7 @@ Defensive Structures
 
 a basic defensive tower, conducts single-target attack, has a middle range of attack, unlocked in the first level
 
-2.laser tower("L")  cost: $100  hitpoints: 50  attack speed: 1.5s  hitrange: ∞
+2.laser tower("L")  cost: $100  hitpoints: 50  attack speed: 1.5s  hitrange: ∞ (unable to attack flying enenmies)
 
 a denfensive tower that attacks all enemies in a row infront of it, unlocked in the second level
 
@@ -44,25 +44,25 @@ a denfensive tower that attacks all enemies in a row infront of it, unlocked in 
 
 a defensive tower that provides the players with crowd control ability, conducts multi-target attack, unlocked in the third level
 
-4.earthquake tower("E")  cost: $200  hitpoints: 100  attack speed: 1s  hitrange: 5
+4.earthquake tower("E")  cost: $200  hitpoints: 100  attack speed: 1s  hitrange: 5 (unable to attack flying enemies)
 
 a defensive tower that conducts multi-target attack to enemies in a circle range, it can kill a group of low-hp enemies at once but the cost of it is rather high, unlocked in the fourth level
 
-5.hell tower("H")  cost: $200  hitpoints: 50% of current hp(at least 50, atmost 500)  attack speed: 1s  hitrange: 5
+5.armor penetration tower("P")  cost: $150  hitpoints: 150(double when attackinig armors)  attackspeed: 1s  hitrange: 5
 
-a denfensive tower that conducts single-target attack with a percentage damage, it can easily deal with high-hp enemies, it will first attack the enemy with the highest hp within range, unlocked in the fifth level
+a defensive tower that conducts single-target attack and breaks the armor(the enemy only bears 1 point damage for every hit when the armor exists) of the enemies, unlocked in the fifth level
 
-6.thief tower("T")  cost: $200  hitpoints:0  bonus: +25% currency gained  range: 5 
+6.war drum tower("D")  cost: $150  hitpoints: 0  bonus: +25% hitspeed range: 3
 
-a defensive tower that increase the currency gained when killing the enemies, unlocked in the sixth level
+a defensive tower that dooesn't attack but provides buffs to all towers within 5*5 area, unlocked in the sixth level
 
-7.armor penetration tower("P")  cost: $150  hitpoints: 50(hp)/50(armor)  attackspeed: 1s  hitrange: 5
+7.hell tower("H")  cost: $200  hitpoints: 50% of current hp(at least 50, atmost 500)  attack speed: 1s  hitrange: 5
 
-a defensive tower that conducts single-target attack and breaks the armor(the enemy only bears 1 point damage for every hit when the armor exists) of the enemies, unlocked in the seventh level
+a denfensive tower that conducts single-target attack with a percentage damage, it can easily deal with high-hp enemies, it will first attack the enemy with the highest hp within range, unlocked in the seventh level
 
-8.war drum tower("D")  cost: $150  hitpoints: 0  bonus: +25% hitpoints range: 3
+8.thief tower("T")  cost: $200  hitpoints:0  bonus: +25% currency gained  range: 5 
 
-a defensive tower that dooesn't attack but provides buffs to all towers within 5*5 area, unlocked in the eighth level
+a defensive tower that increase the currency gained when killing the enemies, unlocked in the eighth level
 
 9.vampire tower("V")  cost: $400  hitpoints: 100  attack speed: 1s  hitrange: 5  heal: 0.05% of the damage
 
@@ -70,32 +70,30 @@ a defensive tower that can heal the base camp for 0.05% of the damage it caused,
 
 Enemies Types
 
-1.pigman ("p") hp: 200 armor: 0 speed: 2
+1.pigman ("p") hp: 200 armor: 0 speed: 2  appear in level 1
 
-2.houndling("h") hp: 150 armor: 0 speed: 4
+2.houndling("h") hp: 150 armor: 0 speed: 4  appear in level 2
 
-3.werewolf*("W") hp: 350 armor: 100 speed: 3
-
+3.werewolf*("W") hp: 350 armor: 100 speed: 3  appear in level 3
 an enemy that runs fast with medium hp, needs frost towers to slow it down
 
-4.mini mammon("m") hp: 500 armor: 0 speed: 1.5
+4.mini mammon("m") hp: 500 armor: 0 speed: 1.5  appear in level 4
 
-5.Armored mammon*("M") hp: 1000 armor:500 speed: 1.0
-
+5.Armored mammon*("M") hp: 1000 armor:500 speed: 1.0  appear in level 5
 an enemy that has high-hp, the hell towers can lower its hp in a short period of time
 
-6.Birdman ("^") hp: 150 armor: 0 speed: 2.0 [Flying]
+6.Birdman ("^") hp: 150 armor: 0 speed: 2.0 [Flying]   appear in level 6
 
-7.Batman ("’") hp: 50 armor: 0 speed: 5.0 [Flying]
+7.Batman ("’") hp: 50 armor: 0 speed: 5.0 [Flying]  appear in level 6
 
-8.Pigman Berserker* ("P") hp: 400 armor: 400 speed: 2.0 -> 4.0 (no armor)
+8.Pigman Berserker* ("P") hp: 400 armor: 400 speed: 2.0 -> 4.0 (no armor) appear in level 7
 
-9.Spiderman ("S") hp: 300 armor: 0 speed: 3 slow effect: 50% 3*3 5s
+9.Spiderman ("S") hp: 300 armor: 0 speed: 3 slow effect: 50% 3*3 5s appear in level 7
 
-10.Alpha Wolf ("A") hp: 500 armor: 200 speed: 1.5 summon cooldown: 5s
+10.Alpha Wolf ("A") hp: 500 armor: 200 speed: 1.5 summon cooldown: 5s appear in level 8
 Summon 2 houndlings.
 
-11.Dragon 
+11.Dragon  appear in level 9
 (1) ("^D^") hp: 2000 armor: 0 speed: 1.5 
 damage area: 3*3 
 cooldown: 15s
