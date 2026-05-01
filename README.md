@@ -90,10 +90,10 @@ an enemy that has high-hp, the hell towers can lower its hp in a short period of
 
 9.Spiderman ("S") hp: 300 armor: 0 speed: 3 slow effect: 50% 3*3 5s appear in level 7
 
-10.Alpha Wolf ("A") hp: 500 armor: 200 speed: 1.5 summon cooldown: 5s appear in level 8
+10.Alpha Wolf* ("A") hp: 500 armor: 200 speed: 1.5 summon cooldown: 5s appear in level 8
 Summon 2 houndlings.
 
-11.Dragon  appear in level 9
+11.Dragon****  appear in level 9
 (1) ("^D^") hp: 2000 armor: 0 speed: 1.5 
 damage area: 3*3 
 cooldown: 15s
@@ -101,3 +101,5 @@ cooldown: 15s
 Slow effect: 50% full-screen 5s
 cooldown: 15s
 (3) ("!D!") hp: 1000 armor: 0 speed: 2
+
+every extra "*" means an extra hitpoint to the base when attacking it
