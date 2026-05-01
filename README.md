@@ -14,7 +14,7 @@ This is a tower defense game where players can accumulate currency to build defe
 
 Game Scene Arrangement
 
-1.base camp("[B]")  hp: 10/10 -> 7/10 -> 4/10 -> 1/10
+1.base camp("[B]")  hp: 10/10
 
 the target that the player must protect, every enemy that reaches it will cause one point damage to the base, the hp of the base may decline as the difficulty of the game increases, but the player will have a way to heal the base
 
