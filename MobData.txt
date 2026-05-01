@@ -6,6 +6,7 @@ HP: 200
 Armor: 0
 Speed: 2.0
 Flying: No
+Gold: 10
 Description: Most common enemy, can be killed by arrow tower within 2 shots
 
 Enemy 2: Houndling
@@ -14,6 +15,7 @@ HP: 150
 Armor: 0
 Speed: 4.0
 Flying: No
+Gold: 10
 Description: Fast common enemy, weak but quick
 
 Enemy 3: Werewolf
@@ -23,6 +25,7 @@ Armor: 100
 Speed: 3.0
 Flying: No
 Special: Needs frost towers to slow it down
+Gold: 50
 Description: Fast enemy with medium hp and armor
 
 Enemy 4: Mini Mammon
@@ -31,6 +34,7 @@ HP: 500
 Armor: 0
 Speed: 1.5
 Flying: No
+Gold: 15
 Description: Slow high-hp enemy
 
 Enemy 5: Armored Mammon
@@ -40,6 +44,7 @@ Armor: 500
 Speed: 1.0
 Flying: No
 Special: Hell towers can lower its hp quickly
+Gold: 50
 Description: High hp and armor, requires specialized tower types
 
 Enemy 6: Birdman
@@ -48,6 +53,7 @@ HP: 150
 Armor: 0
 Speed: 2.0
 Flying: Yes
+Gold:15
 Description: Flying enemy, some towers may not hit it
 
 Enemy 7: Batman
@@ -56,6 +62,7 @@ HP: 50
 Armor: 0
 Speed: 5.0
 Flying: Yes
+Gold: 10
 Description: Extremely fast flying enemy, low hp
 
 Enemy 8: Pigman Berserker
@@ -64,6 +71,7 @@ HP: 400
 Armor: 400
 Speed: 2.0 (becomes 4.0 when armor is broken)
 Flying: No
+Gold:75
 Description: Speeds up dramatically when armor is broken - dangerous when fully armored
 
 Enemy 9: Spiderman
@@ -73,6 +81,7 @@ Armor: 0
 Speed: 3.0
 Flying: No
 Slow Effect: 50% slowdown in 3x3 area for 5 seconds
+Gold: 30
 Description: Applies slow effect to towers, slowing their attack
 
 Enemy 10: Alpha Wolf
@@ -83,6 +92,7 @@ Speed: 1.5
 Flying: No
 Summon Cooldown: 5 seconds
 Summons: 2 Houndlings per summoning event
+Gold: 75
 Description: Boss-like enemy that summons reinforcements
 
 Enemy 11: Dragon Type 1
@@ -90,7 +100,7 @@ Symbol: ^D^
 HP: 2000
 Armor: 0
 Speed: 1.5
-Flying: No
+Flying: Yes
 Damage Area: 3x3
 Attack Cooldown: 15 seconds
 Description: Boss enemy with area damage attack
