@@ -1,0 +1,124 @@
+level 5
+
+7 waves
+
+1.1 Pigman from row 1 left side
+  1 Pigman from row 2 left side
+  1 Pigman from row 3 left side
+
+
+2.1 Houndling from row 1 left side
+  1 Houndling from row 2 left side
+  1 Houndling from row 3 left side
+  [wait 2 second]
+  1 Pigman from row 1 left side
+  1 Pigman from row 2 left side
+  1 Pigman from row 3 left side
+  1 Werewolf from row 1 left side
+  1 Werewolf from row 2 left side
+
+3.1 Pigman from row 1 left side
+  1 Pigman from row 2 left side
+  1 Houndling from row 1 left side
+  1 Houndling from row 2 left side
+  [wait 1 second]
+  1 Armored Mammon from row 3 left side
+
+4.1 Mini Mammon from row 1 left side
+  1 Mini Mammon from row 2 left side
+  1 Mini Mammon from row 3 left side
+  [wait 1 second]
+  1 Armored Mammon from row 1 left side
+  1 Armored Mammon from row 2 left side
+  1 Armored Mammon from row 3 left side
+  [wait 15 second]
+  1 Werewolf from row 1 left side
+  1 Werewolf from row 2 left side
+
+5.1 Houndling from row 1 left side
+  1 Houndling from row 2 left side
+  1 Houndling from row 3 left side
+  1 Houndling from row 1 left side
+  1 Houndling from row 2 left side
+  1 Houndling from row 3 left side
+  [wait 1 second]
+  1 Werewolf from row 1 left side
+  1 Werewolf from row 2 left side
+  1 Werewolf from row 3 left side
+  [wait 1 second]
+  1 Armored Mammon from row 1 left side
+  1 Armored Mammon from row 2 left side
+
+6.1 Mini Mammon from row 1 left side
+  1 Mini Mammon from row 2 left side
+  1 Mini Mammon from row 3 left side
+  1 Mini Mammon from row 1 left side
+  1 Mini Mammon from row 2 left side
+  1 Mini Mammon from row 3 left side
+  [wait 1 second]
+  1 Armored Mammon from row 1 left side
+  1 Armored Mammon from row 2 left side
+  1 Armored Mammon from row 3 left side
+  [wait 10 second]
+  1 Armored Mammon from row 1 left side
+  1 Armored Mammon from row 2 left side
+  1 Armored Mammon from row 3 left side
+
+7.1 Houndling from row 1 left side
+  1 Houndling from row 2 left side
+  1 Houndling from row 3 left side
+  1 Houndling from row 1 left side
+  1 Houndling from row 2 left side
+  1 Houndling from row 3 left side
+  1 Houndling from row 1 left side
+  1 Houndling from row 2 left side
+  1 Houndling from row 3 left side
+  [wait 1 second]
+  1 Werewolf from row 1 left side
+  1 Werewolf from row 2 left side
+  1 Werewolf from row 3 left side
+  1 Werewolf from row 1 left side
+  1 Werewolf from row 2 left side
+  1 Werewolf from row 3 left side
+  [wait 1 second]
+  1 Mini Mammon from row 1 left side
+  1 Mini Mammon from row 2 left side
+  1 Mini Mammon from row 3 left side
+  1 Mini Mammon from row 1 left side
+  1 Mini Mammon from row 2 left side
+  1 Mini Mammon from row 3 left side
+  [wait 1 second]
+  1 Armored Mammon from row 1 left side
+  1 Armored Mammon from row 2 left side
+  1 Armored Mammon from row 3 left side
+  1 Armored Mammon from row 1 left side
+  1 Armored Mammon from row 2 left side
+  1 Armored Mammon from row 3 left side
+  [wait 1 minute]
+  1 Armored Mammon from row 1 left side
+  1 Armored Mammon from row 2 left side
+  1 Armored Mammon from row 3 left side
+  1 Armored Mammon from row 1 left side
+  1 Armored Mammon from row 2 left side
+  1 Armored Mammon from row 3 left side
+
+[Level Challenge Strategy] Use the Hell Tower's percentage-based damage to ignore armor and quickly defeat the high-armor Armored Mammon. 
+                           Traditional towers like Arrow and Laser are ineffective against Armored Mammon due to their 500 armor. 
+                           Place Hell Towers at key chokepoints and use Frost Towers to slow enemies, maximizing Hell Tower damage output.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
