@@ -1,49 +1,49 @@
 1.	a birdman from row 14 left side
-a birdman from row 15 left side
-a birdman from row 16 left side
-a birdman from row 14 right side
-a birdman from row 15 right side
-a birdman from row 16 right side
-a birdman from column 71 up side
-a birdman from column 71 down side
-[wait 3 seconds]
-a batman from row 14 left side
-a batman from row 16 left side
-a batman from row 14 right side
-a batman from row 16 right side
-a batman from column 71 up side
-a batman from column 71 down side
+    a birdman from row 15 left side
+    a birdman from row 16 left side
+    a birdman from row 14 right side
+    a birdman from row 15 right side
+    a birdman from row 16 right side
+    a birdman from column 71 up side
+    a birdman from column 71 down side
+    [wait 3 seconds]
+    a batman from row 14 left side
+    a batman from row 16 left side
+    a batman from row 14 right side
+    a batman from row 16 right side
+    a batman from column 71 up side
+    a batman from column 71 down side
 2.	a birdman from row 14 left side
-a mini mammon from row 15 left side
-a birdman from row 16 left side
-a birdman from row 14 right side
-a mini mammon from row 15 right side
-a birdman from row 16 right side
-a birdman from column 71 up side
-a birdman from column 71 down side
+    a mini mammon from row 15 left side
+    a birdman from row 16 left side
+    a birdman from row 14 right side
+    a mini mammon from row 15 right side
+    a birdman from row 16 right side
+    a birdman from column 71 up side
+    a birdman from column 71 down side
 3.	a pigman from row 14 left side
-a pigman from row 15 left side
-a pigman from row 16 left side
-a pigman from row 14 right side
-a pigman from row 15 right side
-a pigman from row 16 right side
-a pigman from column 71 up side
-a pigman from column 71 down side
-[wait 2 seconds]
-a birdman from row 14 left side
-a mini mammon from row 15 left side
-a birdman from row 16 left side
-a birdman from row 14 right side
-a mini mammon from row 15 right side
-a birdman from row 16 right side
-a mini mammon from column 71 up side
-a mini mammon from column 71 down side
-[wait 5 seconds]
+    a pigman from row 15 left side
+    a pigman from row 16 left side
+    a pigman from row 14 right side
+    a pigman from row 15 right side
+    a pigman from row 16 right side
+    a pigman from column 71 up side
+    a pigman from column 71 down side
+    [wait 2 seconds]
+    a birdman from row 14 left side
+    a mini mammon from row 15 left side
+    a birdman from row 16 left side
+    a birdman from row 14 right side
+    a mini mammon from row 15 right side
+    a birdman from row 16 right side
+    a mini mammon from column 71 up side
+    a mini mammon from column 71 down side
+    [wait 5 seconds]
 4.	a birdman from row 14 left side
-a werewolf from row 15 left side
-a birdman from row 16 left side
-a birdman from row 14 right side
-a werewolf from row 15 right side
-a birdman from row 16 right side
-a birdman from column 71 up side
-a birdman from column 71 down side
+    a werewolf from row 15 left side
+    a birdman from row 16 left side
+    a birdman from row 14 right side
+    a werewolf from row 15 right side
+    a birdman from row 16 right side
+    a birdman from column 71 up side
+    a birdman from column 71 down side
