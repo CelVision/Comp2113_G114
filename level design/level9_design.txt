@@ -1,1 +1,39 @@
+level 9 - Final Boss
 
+3 + 1 waves
+
+1.
+3 houndling from row 1
+3 houndling from row 2
+3 houndling from row 3
+
+[wait for 3 seconds]
+
+3 pigman from row 1
+3 pigman from row 2
+3 pigman from row 3
+
+[wait for 3 seconds]
+
+3 mini mammon from row 1
+1 armored mammon from row 2
+3 mini mammon from row 3
+
+2.
+3 birdman from row 1
+3 batman from row 3
+1 alpha wolf from row 2
+
+[wait for 3 seconds]
+
+1 pigman berserker from row 1
+1 werewolf from row 3 
+
+3.
+10 pigman from row 1
+10 birdman from row 3
+3 spiderman from row 2
+3 alpha wolf from row 2
+
+Boss wave
+1 Dragon from row 2
