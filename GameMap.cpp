@@ -195,6 +195,72 @@ public:
         }
     }
     
+    void loadMapFromFile(int level) {
+        // Initialize all tiles as BLOCKED
+        for (int i = 0; i < GameMap::ROWS; i++) {
+            for (int j = 0; j < GameMap::COLS; j++) {
+                gameMap.grid[i][j].type = BLOCKED;
+                gameMap.grid[i][j].displayChar = ' ';
+                gameMap.grid[i][j].towerIndex = -1;
+                gameMap.grid[i][j].towerPosRow = -1;
+                gameMap.grid[i][j].towerPosCol = -1;
+                gameMap.grid[i][j].mobIndex = -1;
+            }
+        }
+        
+        // Read map file
+        string filename = "Maps/map_for_level" + to_string(level) + ".txt";
+        ifstream mapFile(filename);
+        
+        if (!mapFile.is_open()) {
+            cout << "Error: Could not load map file " << filename << endl;
+            return;
+        }
+        
+        string line;
+        int row = 0;
+        
+        while (getline(mapFile, line) && row < GameMap::ROWS) {
+            for (int col = 0; col < (int)line.length() && col < GameMap::COLS; col++) {
+                char ch = line[col];
+                
+                if (ch == '.') {
+                    // Buildable area
+                    gameMap.grid[row][col].type = BUILDABLE;
+                    gameMap.grid[row][col].displayChar = '.';
+                } else if (ch == '+') {
+                    // Spawn point (road/path)
+                    gameMap.grid[row][col].type = PATH;
+                    gameMap.grid[row][col].displayChar = '+';
+                } else if (ch == '-') {
+                    // Road path
+                    gameMap.grid[row][col].type = PATH;
+                    gameMap.grid[row][col].displayChar = '-';
+                } else if (ch == 'M') {
+                    // Base camp
+                    gameMap.grid[row][col].type = BASE;
+                    gameMap.grid[row][col].displayChar = 'M';
+                } else if (ch == '#') {
+                    // Blocked terrain
+                    gameMap.grid[row][col].type = BLOCKED;
+                    gameMap.grid[row][col].displayChar = '#';
+                } else {
+                    // Everything else (space, etc.) is blocked
+                    gameMap.grid[row][col].type = BLOCKED;
+                    gameMap.grid[row][col].displayChar = ' ';
+                }
+            }
+            // Fill remaining columns as BLOCKED if line is shorter
+            for (int col = line.length(); col < GameMap::COLS; col++) {
+                gameMap.grid[row][col].type = BLOCKED;
+                gameMap.grid[row][col].displayChar = ' ';
+            }
+            row++;
+        }
+        
+        mapFile.close();
+    }
+    
     void setBaseCamp(int row, int col) {
         gameMap.grid[row][col].type = BASE;
         gameMap.grid[row][col].displayChar = 'B';
@@ -304,6 +370,18 @@ public:
         }
     }
     
+    bool isPathInSelection(int selRow, int selCol) {
+        // Check if any tile in 3x3 selection contains a PATH tile
+        for (int r = selRow - 1; r <= selRow + 1; r++) {
+            for (int c = selCol - 1; c <= selCol + 1; c++) {
+                if (gameMap.grid[r][c].type == PATH) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
     void renderGameMapWithSelection(int selRow, int selCol, int previewTowerIndex = -1, bool flash = false) {
         for (int i = 0; i < GameMap::ROWS; i++) {
             for (int j = 0; j < GameMap::COLS; j++) {
@@ -316,9 +394,16 @@ public:
                 // Check if in preview area
                 bool inPreview = inSelection && previewTowerIndex >= 0;
                 
+                // Check if selection is on a road
+                bool pathInSelection = isPathInSelection(selRow, selCol);
+                
                 if (inPreview && flash) {
-                    // Flash preview in yellow
-                    setTextColor(COLOR_YELLOW);
+                    // Flash preview - red if on path, yellow if on buildable
+                    if (pathInSelection) {
+                        setTextColor(COLOR_RED);
+                    } else {
+                        setTextColor(COLOR_YELLOW);
+                    }
                     if (i == selRow && j == selCol) {
                         cout << towers[previewTowerIndex].symbol;
                     } else {
@@ -326,8 +411,12 @@ public:
                     }
                     resetTextColor();
                 } else if (inSelection) {
-                    // Show selection bracket
-                    setTextColor(COLOR_CYAN);
+                    // Show selection bracket - red if on path, cyan if on buildable
+                    if (pathInSelection) {
+                        setTextColor(COLOR_RED);
+                    } else {
+                        setTextColor(COLOR_CYAN);
+                    }
                     if ((i == selRow - 1 || i == selRow + 1) && 
                         (j >= selCol - 1 && j <= selCol + 1)) {
                         cout << "─";  // Top/bottom bracket

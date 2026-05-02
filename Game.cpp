@@ -261,15 +261,8 @@ void displayGameScreen(string playerName, int levelSelected) {
     // Initialize game map manager
     GameMapManager mapManager;
     
-    // Create path for the selected level
-    vector<pair<int, int>> pathCoords;
-    mapManager.createPathForLevel(levelSelected, pathCoords);
-    
-    // Initialize buildable areas
-    mapManager.initializeBuildableAreas();
-    
-    // Set base camp at the end of the map
-    mapManager.setBaseCamp(16, 97);
+    // Load map from file for the selected level
+    mapManager.loadMapFromFile(levelSelected);
     
     // Tower placement mode
     int selRow = 16;  // Start at middle
