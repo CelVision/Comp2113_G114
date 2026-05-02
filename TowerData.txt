@@ -53,10 +53,38 @@ ASCII Art:
 Description: Conducts multi-target attack in circle range, kills groups of low-hp enemies
 Unlock Level: 4
 
-Tower 5: Hell Tower
+Tower 5: Armor Penetration Tower
+Symbol: P
+Cost: $150
+Hitpoints: 150 (double when attacking armors)
+Attack Speed: 1.0s
+Hit Range: 5
+Special: Breaks enemy armor
+ASCII Art:
+  <^>
+  | |
+  ===
+Description: Single-target attack that breaks enemy armor (armor reduces damage to 1 per hit)
+Unlock Level: 5
+
+Tower 6: War Drum Tower
+Symbol: D
+Cost: $150
+Hitpoints: 0
+Attack Speed: N/A
+Hit Range: 5 (buffs in 5x5 area)
+Bonus: +25% hitspeed for nearby towers
+ASCII Art:
+  [ ]
+  | |
+  ...
+Description: Doesn't attack but buffs all towers within 5x5 area with +25% HP
+Unlock Level: 6
+
+Tower 7: Hell Tower
 Symbol: H
 Cost: $200
-Hitpoints: 50% of current hp (min 50, max 500)
+Hitpoints: 50% of current hp (min 50, max 500, only 50 when attacking armors)
 Attack Speed: 1.0s
 Hit Range: 5
 Damage: Percentage-based
@@ -67,7 +95,7 @@ ASCII Art:
 Description: Single-target attack with percentage damage, targets highest-hp enemy first
 Unlock Level: 5
 
-Tower 6: Thief Tower
+Tower 8: Thief Tower
 Symbol: T
 Cost: $200
 Hitpoints: 0
@@ -79,34 +107,6 @@ ASCII Art:
   | |
   ...
 Description: Doesn't attack, increases currency gained when killing enemies
-Unlock Level: 6
-
-Tower 7: Armor Penetration Tower
-Symbol: P
-Cost: $150
-Hitpoints: 50 (hp and armor)
-Attack Speed: 1.0s
-Hit Range: 5
-Special: Breaks enemy armor
-ASCII Art:
-  <^>
-  | |
-  ===
-Description: Single-target attack that breaks enemy armor (armor reduces damage to 1 per hit)
-Unlock Level: 7
-
-Tower 8: War Drum Tower
-Symbol: D
-Cost: $150
-Hitpoints: 0
-Attack Speed: N/A
-Hit Range: 5 (buffs in 5x5 area)
-Bonus: +25% hitpoints for nearby towers
-ASCII Art:
-  [ ]
-  | |
-  ...
-Description: Doesn't attack but buffs all towers within 5x5 area with +25% HP
 Unlock Level: 8
 
 Tower 9: Vampire Tower

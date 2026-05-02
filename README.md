@@ -48,7 +48,7 @@ a defensive tower that conducts multi-target attack to enemies in a circle range
 
 a defensive tower that conducts single-target attack and breaks the armor(the enemy only bears 1 point damage for every hit when the armor exists) of the enemies, unlocked in the fifth level
 
-6.war drum tower("D")  cost: $150  hitpoints: 0  bonus: +25% hitspeed range: 3
+6.war drum tower("D")  cost: $150  hitpoints: 0  bonus: +25% hitspeed range: 5
 
 a defensive tower that dooesn't attack but provides buffs to all towers within 5*5 area, unlocked in the sixth level
 

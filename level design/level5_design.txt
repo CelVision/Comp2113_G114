@@ -102,9 +102,9 @@ level 5
   1 Armored Mammon from row 2 left side
   1 Armored Mammon from row 3 left side
 
-[Level Challenge Strategy] Use the Hell Tower's percentage-based damage to ignore armor and quickly defeat the high-armor Armored Mammon. 
+[Level Challenge Strategy] Use the Armor penetration Tower's percentage-based damage to ignore armor and quickly defeat the high-armor Armored Mammon. 
                            Traditional towers like Arrow and Laser are ineffective against Armored Mammon due to their 500 armor. 
-                           Place Hell Towers at key chokepoints and use Frost Towers to slow enemies, maximizing Hell Tower damage output.
+                           Place Armor penetration Towers at key chokepoints and use Frost Towers to slow enemies, maximizing Hell Tower damage output.
 
 
 

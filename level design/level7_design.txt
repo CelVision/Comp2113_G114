@@ -1,1 +1,89 @@
+1.	a pigman from column 5 up side
+    a pigman from column 5 down side
+    a pigman from row 14 right side
+    a pigman from row 15 right side
+    a pigman from row 16 right side
+    [wait 3 seconds]
+    a pigman from column 5 up side
+    a pigman from column 5 down side
+    a pigman from row 14 right side
+    a werewolf from row 15 right side
+    a pigman from row 16 right side
+ 
+2.	a pigman from column 5 up side
+    a pigman from column 5 down side
+    a pigman from row 14 right side
+    a pigman berserker from row 15 right side
+    a pigman from row 16 right side
+    [wait 1 second]
+    a batman from column 5 up side
+    a batman from column 5 down side
+    [wait a second]
+    a batman from column 5 up side
+    a batman from column 5 down side
+    [wait 5 seconds]
+    a pigman from row 14 right side
+    a pigman berserker from row 15 right side
+    a pigman from row 16 right side
 
+3.	a pigman from column 5 up side
+    a pigman from column 5 down side
+    a pigman from row 14 right side
+    a spiderman from row 15 right side
+    a pigman from row 16 right side
+    [wait 2 seconds]
+    a pigman from row 14 right side
+    a spiderman from row 15 right side
+    a pigman from row 16 right side
+    [wait 2 seconds]
+    a pigman from row 14 right side
+    a spiderman from row 15 right side
+    a pigman from row 16 right side
+
+4.	a pigman from row 14 right side
+    a pigman from row 15 right side
+    a pigman from row 16 right side
+    [wait 1 second]
+    a armored mammon from row 14 right side
+    a armored mammon from row 15 right side
+    a armored mammon from row 16 right side
+    a houndling from column 5 up side
+    a houndling from column 5 down side
+    [wait 5 seconds]
+    a armored mammon from row 14 right side
+    a armored mammon from row 15 right side
+    a armored mammon from row 16 right side
+
+5.	a pigman from row 14 right side
+    a spiderman from row 15 right side
+    a pigman from row 16 right side
+    [wait 1 second]
+    a armored mammon from row 14 right side
+    a armored mammon from row 15 right side
+    a armored mammon from row 16 right side
+    a houndling from column 5 up side
+    a houndling from column 5 down side
+    [wait 1 second]
+    a houndling from column 5 up side
+    a houndling from column 5 down side
+
+6.	a pigman from row 14 right side
+    a spiderman from row 15 right side
+    a pigman from row 16 right side
+    [wait 1 second]
+    a armored mammon from row 14 right side
+    a armored mammon from row 15 right side
+    a armored mammon from row 16 right side
+    a houndling from column 5 up side
+    a houndling from column 5 down side
+    [wait 1 second]
+    a armored mammon from row 14 right side
+    a armored mammon from row 15 right side
+    a armored mammon from row 16 right side
+    a werewolf from column 5 up side
+    a werewolf from column 5 down side
+
+[Level Challenge Strategy] Use armor penetrating towers to break the armors and kill berserkers quickly, use wardrum to contend against
+                           the spidermans' slowdown debuff, use hell towers to cause high hp damage after penetrating the armors, be aware of 
+                           the fast-moving enemies at the back, use some high hitspeed towers to kill them while dealing with the main enemies
+                           at the front

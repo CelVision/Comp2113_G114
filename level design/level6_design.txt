@@ -13,6 +13,7 @@
     a batman from row 16 right side
     a batman from column 71 up side
     a batman from column 71 down side
+
 2.	a birdman from row 14 left side
     a mini mammon from row 15 left side
     a birdman from row 16 left side
@@ -21,6 +22,7 @@
     a birdman from row 16 right side
     a birdman from column 71 up side
     a birdman from column 71 down side
+
 3.	a pigman from row 14 left side
     a pigman from row 15 left side
     a pigman from row 16 left side
@@ -38,7 +40,7 @@
     a birdman from row 16 right side
     a mini mammon from column 71 up side
     a mini mammon from column 71 down side
-    [wait 5 seconds]
+    
 4.	a birdman from row 14 left side
     a werewolf from row 15 left side
     a birdman from row 16 left side
@@ -47,6 +49,7 @@
     a birdman from row 16 right side
     a birdman from column 71 up side
     a birdman from column 71 down side
+
 5.	a birdman from row 14 left side
     a birdman from row 15 left side
     a birdman from row 16 left side
@@ -78,6 +81,7 @@
     a batman from row 16 right side
     a batman from column 71 up side
     a batman from column 71 down side
+
 6.	a birdman from row 14 left side
     a werewolf from row 15 left side
     a birdman from row 16 left side
@@ -93,4 +97,5 @@
     an armored mammon from row 16 right side
 
 [Level Challenge Strategy] Use a number of arrow towers to clear up birdmans, use frozen towers to slow down batmans, use wardrums to increase the hitspeed
-                           of the towers to clear up groups of flying enemies, at last build up armor penetrating towers to break the armors
+                           of the towers to clear up groups of flying enemies, at last build up armor penetrating towers to break the armors, note that
+                           earthquake towers and laser towers are not useful in this level!
