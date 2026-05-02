@@ -52,7 +52,7 @@ a defensive tower that conducts single-target attack and breaks the armor(the en
 
 a defensive tower that dooesn't attack but provides buffs to all towers within 5*5 area, unlocked in the sixth level
 
-7.hell tower("H")  cost: $200  hitpoints: 50% of current hp or current armor(at least 50, atmost 500)  attack speed: 1s  hitrange: 5
+7.hell tower("H")  cost: $200  hitpoints: 50% of current hp(at least 50, atmost 500, only 50 points to armors)  attack speed: 1s  hitrange: 5
 
 a denfensive tower that conducts single-target attack with a percentage damage, it can easily deal with high-hp enemies, it will first attack the enemy with the highest hp within range, unlocked in the seventh level
 
