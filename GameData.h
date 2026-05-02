@@ -62,6 +62,8 @@ struct Tile {
     TileType type;
     char displayChar;
     int towerIndex;   // Index of tower placed (-1 if none)
+    int towerPosRow;  // Position within 3x3 tower grid (0-2, -1 if not in tower)
+    int towerPosCol;  // Position within 3x3 tower grid (0-2, -1 if not in tower)
     int mobIndex;     // Index of mob on this tile (-1 if none)
 };
 

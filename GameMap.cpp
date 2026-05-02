@@ -187,6 +187,9 @@ public:
                 if (gameMap.grid[i][j].type != PATH && gameMap.grid[i][j].type != BASE) {
                     gameMap.grid[i][j].type = BUILDABLE;
                     gameMap.grid[i][j].displayChar = '.';
+                    gameMap.grid[i][j].towerIndex = -1;
+                    gameMap.grid[i][j].towerPosRow = -1;
+                    gameMap.grid[i][j].towerPosCol = -1;
                 }
             }
         }
@@ -279,16 +282,23 @@ public:
         int endRow = centerRow + 1;
         int endCol = centerCol + 1;
         
-        // Place tower in 3x3 area (center gets the symbol, rest are blocked)
+        // Place tower in 3x3 area with ASCII art
         for (int r = startRow; r <= endRow; r++) {
             for (int c = startCol; c <= endCol; c++) {
                 gameMap.grid[r][c].type = TOWER;
-                if (r == centerRow && c == centerCol) {
-                    gameMap.grid[r][c].displayChar = towers[towerIndex].symbol;
-                    gameMap.grid[r][c].towerIndex = towerIndex;
+                gameMap.grid[r][c].towerIndex = towerIndex;
+                
+                // Store position within 3x3 tower grid (0-2, 0-2)
+                int posRow = r - startRow;  // 0, 1, or 2
+                int posCol = c - startCol;  // 0, 1, or 2
+                gameMap.grid[r][c].towerPosRow = posRow;
+                gameMap.grid[r][c].towerPosCol = posCol;
+                
+                // Set display character from ASCII art
+                if (posRow < 3 && posCol < (int)towers[towerIndex].art[posRow].length()) {
+                    gameMap.grid[r][c].displayChar = towers[towerIndex].art[posRow][posCol];
                 } else {
-                    gameMap.grid[r][c].displayChar = '#';  // Tower body
-                    gameMap.grid[r][c].towerIndex = towerIndex;
+                    gameMap.grid[r][c].displayChar = ' ';
                 }
             }
         }
