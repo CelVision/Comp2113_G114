@@ -82,3 +82,8 @@
     a armored mammon from row 16 right side
     a werewolf from column 5 up side
     a werewolf from column 5 down side
+
+[Level Challenge Strategy] Use armor penetrating towers to break the armors and kill berserkers quickly, use wardrum to contend against
+                           the spidermans' slowdown debuff, use hell towers to cause high hp damage after penetrating the armors, be aware of 
+                           the fast-moving enemies at the back, use some high hitspeed towers to kill them while dealing with the main enemies
+                           at the front
