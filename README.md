@@ -14,21 +14,17 @@ This is a tower defense game where players can accumulate currency to build defe
 
 Game Scene Arrangement
 
-1.base camp("[B]")  hp: 10/10
+1.base camp("M")  hp: 10/10
 
 the target that the player must protect, every enemy that reaches it will cause one point damage to the base, the hp of the base may decline as the difficulty of the game increases, but the player will have a way to heal the base
 
-2.path("-")  hp: ∞
+2.path(" ")  hp: ∞
 
 the path restricts the enemy's movement
 
 3.The location where structures can be set (".")
 
 players can put structures on these area
-
-4.The location where structures can't be set("")
-
-players can't put structures on these area
 
 Defensive Structures
 
@@ -75,11 +71,13 @@ Enemies Types
 2.houndling("h") hp: 150 armor: 0 speed: 4  appear in level 2
 
 3.werewolf*("W") hp: 350 armor: 100 speed: 3  appear in level 3
+
 an enemy that runs fast with medium hp, needs frost towers to slow it down
 
 4.mini mammon("m") hp: 500 armor: 0 speed: 1.5  appear in level 4
 
 5.Armored mammon*("M") hp: 1000 armor:500 speed: 1.0  appear in level 5
+
 an enemy that has high-hp, the hell towers can lower its hp in a short period of time
 
 6.Birdman ("^") hp: 150 armor: 0 speed: 2.0 [Flying]   appear in level 6
@@ -94,12 +92,15 @@ an enemy that has high-hp, the hell towers can lower its hp in a short period of
 Summon 2 houndlings.
 
 11.Dragon****  appear in level 9
+
 (1) ("^D^") hp: 2000 armor: 0 speed: 1.5 
 damage area: 3*3 
 cooldown: 15s
+
 (2) ("D") hp: 2000 armor: 1000 speed: 1
 Slow effect: 50% full-screen 5s
 cooldown: 15s
+
 (3) ("!D!") hp: 1000 armor: 0 speed: 2
 
 every extra "*" means an extra hitpoint to the base when attacking it
