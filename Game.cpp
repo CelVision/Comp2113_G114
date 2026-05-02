@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <set>
 #include <iomanip>
 #include <cstdlib>
 #include <conio.h>
@@ -47,6 +48,63 @@ void showCursor(bool show) {
     GetConsoleCursorInfo(hConsole, &cursorInfo);
     cursorInfo.bVisible = show;
     SetConsoleCursorInfo(hConsole, &cursorInfo);
+}
+
+// Helper: Check which towers overlap with 3x3 selection
+vector<int> getOverlappingTowers(GameMap& gameMap, int selRow, int selCol) {
+    vector<int> overlappingTowers;
+    set<int> uniqueTowers;  // Use set to avoid duplicates
+    
+    for (int i = selRow - 1; i <= selRow + 1; i++) {
+        for (int j = selCol - 1; j <= selCol + 1; j++) {
+            if (i >= 0 && i < GameMap::ROWS && j >= 0 && j < GameMap::COLS) {
+                Tile& tile = gameMap.grid[i][j];
+                if (tile.type == TOWER && tile.towerIndex >= 0) {
+                    uniqueTowers.insert(tile.towerIndex);
+                }
+            }
+        }
+    }
+    
+    for (int idx : uniqueTowers) {
+        overlappingTowers.push_back(idx);
+    }
+    return overlappingTowers;
+}
+
+// Helper: Check if selection fully covers one tower (all 9 cells belong to same tower)
+bool checkFullTowerCoverage(GameMap& gameMap, int selRow, int selCol, int& outTowerIndex) {
+    outTowerIndex = -1;
+    int firstTowerIdx = -1;
+    int cellCount = 0;
+    int towerCellsInSelection = 0;
+    
+    // Count tower cells and check if all are same tower
+    for (int i = selRow - 1; i <= selRow + 1; i++) {
+        for (int j = selCol - 1; j <= selCol + 1; j++) {
+            if (i >= 0 && i < GameMap::ROWS && j >= 0 && j < GameMap::COLS) {
+                Tile& tile = gameMap.grid[i][j];
+                cellCount++;
+                
+                if (tile.type == TOWER && tile.towerIndex >= 0) {
+                    towerCellsInSelection++;
+                    if (firstTowerIdx == -1) {
+                        firstTowerIdx = tile.towerIndex;
+                    } else if (tile.towerIndex != firstTowerIdx) {
+                        return false;  // Multiple towers - not full coverage
+                    }
+                }
+            }
+        }
+    }
+    
+    // Check if all 9 cells belong to one tower
+    if (towerCellsInSelection == 9 && firstTowerIdx >= 0) {
+        outTowerIndex = firstTowerIdx;
+        return true;
+    }
+    
+    return false;
 }
 
 // Display BYTE RUSH logo
@@ -224,6 +282,11 @@ void displayGameScreen(string playerName, int levelSelected) {
     
     bool placingTowers = true;
     
+    // Tower sell system variables
+    int sellModeState = 0;  // 0: no sell, 1: showing price, 2: confirmed
+    int sellTowerIndex = -1;
+    int sellTowerPrice = 0;
+    
     // Hide cursor for better appearance
     showCursor(false);
     
@@ -287,10 +350,20 @@ void displayGameScreen(string playerName, int levelSelected) {
                     }
                     resetTextColor();
                 } else if (inPlacement) {
-                    // Show solid cyan square for placement area when not previewing
-                    setTextColor(COLOR_CYAN);
-                    cout << "█";
-                    resetTextColor();
+                    // Check for tower overlaps
+                    bool isTowerCell = (tile.type == TOWER && tile.towerIndex >= 0);
+                    
+                    if (isTowerCell) {
+                        // Show overlapping tower cells in red
+                        setTextColor(COLOR_RED);
+                        cout << tile.displayChar;
+                        resetTextColor();
+                    } else {
+                        // Show cyan for empty placement area
+                        setTextColor(COLOR_CYAN);
+                        cout << "█";
+                        resetTextColor();
+                    }
                 } else {
                     // Normal rendering
                     switch (tile.type) {
@@ -328,10 +401,30 @@ void displayGameScreen(string playerName, int levelSelected) {
         cout << string(75, '=') << endl;
         
         setCursorPosition(0, infoLine + 1);
-        cout << "Arrow Keys: Move | 1-9: Tower | Enter: Plant | Q: Exit                          ";
+        cout << "Arrow Keys: Move | 1-9: Tower | Enter: Plant/Sell | Q: Exit                     ";
+        
+        // Check for overlapping towers
+        vector<int> overlapping = getOverlappingTowers(gameMap, selRow, selCol);
+        int coveredTowerIndex = -1;
+        bool isFullCoverage = checkFullTowerCoverage(gameMap, selRow, selCol, coveredTowerIndex);
         
         setCursorPosition(0, infoLine + 2);
-        if (previewTowerIndex >= 0) {
+        if (isFullCoverage && coveredTowerIndex >= 0) {
+            // Full tower coverage - offer sell
+            if (sellModeState == 0) {
+                cout << "SELL TOWER: " << towers[coveredTowerIndex].name << " | Press ENTER to see price";
+                cout << string(10, ' ');
+            } else if (sellModeState == 1) {
+                // Show price
+                sellTowerPrice = towers[coveredTowerIndex].cost / 2;
+                cout << "SELL FOR: $" << sellTowerPrice << " | Press ENTER to CONFIRM or move to cancel";
+                sellModeState = 1;
+            }
+        } else if (overlapping.size() > 0) {
+            // Partial overlap - can't place
+            cout << "CONFLICT: " << (int)overlapping.size() << " existing tower(s) overlap - CANNOT PLACE";
+            cout << string(15, ' ');
+        } else if (previewTowerIndex >= 0) {
             cout << "Preview: " << towers[previewTowerIndex].name << " - Cost: $" << towers[previewTowerIndex].cost;
             if (mapManager.canPlaceTower(selRow, selCol, previewTowerIndex)) {
                 cout << " [CAN PLACE]" << string(20, ' ');
@@ -353,17 +446,53 @@ void displayGameScreen(string playerName, int levelSelected) {
                 // Exit tower placement
                 placingTowers = false;
             } else if (key == 13) {
-                // Enter - plant tower
-                if (previewTowerIndex >= 0 && mapManager.canPlaceTower(selRow, selCol, previewTowerIndex)) {
-                    if (money >= towers[previewTowerIndex].cost) {
-                        mapManager.placeTowerAt(selRow, selCol, previewTowerIndex);
-                        money -= towers[previewTowerIndex].cost;
-                        previewTowerIndex = -1;
+                // Enter key - handle plant, sell confirmation, or show sell price
+                int tempTowerIdx = -1;
+                bool fullCov = checkFullTowerCoverage(gameMap, selRow, selCol, tempTowerIdx);
+                
+                if (fullCov && tempTowerIdx >= 0) {
+                    // Tower sell interaction
+                    if (sellModeState == 0) {
+                        // First press - show price
+                        sellModeState = 1;
+                        sellTowerIndex = tempTowerIdx;
+                    } else if (sellModeState == 1) {
+                        // Second press - confirm sell
+                        sellTowerPrice = towers[tempTowerIdx].cost / 2;
+                        money += sellTowerPrice;
+                        
+                        // Remove tower from all 9 cells
+                        for (int i = selRow - 1; i <= selRow + 1; i++) {
+                            for (int j = selCol - 1; j <= selCol + 1; j++) {
+                                if (i >= 0 && i < GameMap::ROWS && j >= 0 && j < GameMap::COLS) {
+                                    gameMap.grid[i][j].type = BUILDABLE;
+                                    gameMap.grid[i][j].displayChar = '.';
+                                    gameMap.grid[i][j].towerIndex = -1;
+                                    gameMap.grid[i][j].towerPosRow = -1;
+                                    gameMap.grid[i][j].towerPosCol = -1;
+                                }
+                            }
+                        }
+                        sellModeState = 0;
+                        sellTowerIndex = -1;
+                    }
+                } else {
+                    // Normal tower placement
+                    if (previewTowerIndex >= 0 && mapManager.canPlaceTower(selRow, selCol, previewTowerIndex)) {
+                        vector<int> overlapCheck = getOverlappingTowers(gameMap, selRow, selCol);
+                        if (overlapCheck.size() == 0) {  // No overlaps
+                            if (money >= towers[previewTowerIndex].cost) {
+                                mapManager.placeTowerAt(selRow, selCol, previewTowerIndex);
+                                money -= towers[previewTowerIndex].cost;
+                                previewTowerIndex = -1;
+                            }
+                        }
                     }
                 }
             } else if (key >= '1' && key <= '9') {
                 // Number key - select tower for preview
                 previewTowerIndex = (key - '1');
+                sellModeState = 0;  // Reset sell mode
             } else if (key == 224) {
                 // Extended keys (arrow keys)
                 int extKey = _getch();
@@ -377,8 +506,9 @@ void displayGameScreen(string playerName, int levelSelected) {
                 } else if (extKey == 77) {  // Right arrow
                     if (selCol < GameMap::COLS - 3) selCol++;
                 }
-                // Clear preview when moving
+                // Clear preview and sell mode when moving
                 previewTowerIndex = -1;
+                sellModeState = 0;
             }
         }
         
