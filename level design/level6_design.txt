@@ -92,4 +92,5 @@
     an armored mammon from row 14 right side
     an armored mammon from row 16 right side
 
-[Level Challenge Strategy] Use a number of arrow towers to clear up birdmans, use frozen towers to slow down batmans, use wardrums to increase the hitspeed                             of the towers to clear up groups of flying enemies, at last build up armor penetrating towers to break the armors
+[Level Challenge Strategy] Use a number of arrow towers to clear up birdmans, use frozen towers to slow down batmans, use wardrums to increase the hitspeed
+                           of the towers to clear up groups of flying enemies, at last build up armor penetrating towers to break the armors
