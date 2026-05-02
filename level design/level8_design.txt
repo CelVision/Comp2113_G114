@@ -3,36 +3,36 @@ level 8
 5 waves
 
 1.
-3 pigman from row 2 left side
-3 houndling from row 3 left side
-2 werewolf from row 3 left side
+3 pigman from row 23 left side
+3 houndling from row 24 left side
+2 werewolf from row 24 left side
 
 2.
-3 mini mammon from row 2 left side
-1 armored mammon from row 1 left side
+3 mini mammon from row 23 left side
+1 armored mammon from row 22 left side
 
 [wait for 3 seconds]
 
-1 spiderman from row 3 down side
-2 pigman berserker from row 3 down side
+1 spiderman from column 99 down side
+2 pigman berserker from column 99 down side
 
 3.
-2 birdman from row 2 left side
-4 batman from row 3 left side
-1 alpha wolf from row 1 down side
-3 houndling from row 3 down side
-2 werewolf from row 2 down side
+2 birdman from row 23 left side
+4 batman from row 24 left side
+1 alpha wolf from column 97 down side
+3 houndling from column 98 down side
+2 werewolf from column 98 down side
 
 4.
-1 spiderman from row 2 left side
-1 spiderman from row 2 down side
-1 pigman berserker from row 3 left side
-1 pigman berserker from row 3 down side
-1 alpha wolf from row 1 left side
-1 alpha wolf from row 1 left side
+1 spiderman from row 23 left side
+1 spiderman from column 98 down side
+1 pigman berserker from row 24 left side
+1 pigman berserker from column 99 down side
+1 alpha wolf from row 22 left side
+1 alpha wolf from column 97 down side
 
 5.
-1 alpha wolf from row 1 left side
-1 alpha wolf from row 3 left side
-1 pigman berserker from row 3 left side
+1 alpha wolf from row 22 left side
+1 alpha wolf from row 24 left side
+1 pigman berserker from row 24 left side
 
