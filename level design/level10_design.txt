@@ -1,1 +1,98 @@
+Level 10: Endless Tower Defense Mode
+
+-wave amount: infinite waves (endless mode)
+
+Map Layout:
+- Space characters (' ') = Enemy patrol routes (passages through the map)
+- Dot characters ('.') = Non-path areas, suitable for tower placement
+- 'M' surrounded by '#' = 3x3 home base
+- Row 2, 3, 4 left side: Only entry point for all enemies (space corridor on the left edge)
+
+Description: This is an endless survival mode where waves continue indefinitely. The first 5 waves are designed to gradually increase in difficulty with more enemies and stronger types. All enemies enter through the left passage (row 2, 3, 4 left side). Starting from wave 6, enemy spawn count remains constant, but enemy HP follows a logistic growth formula dy/dx = k*y*(A - y) to approach the upper limit A. Every 10 waves (integer multiples), a dragon boss wave appears.
+
+Logistic Growth Parameters:
+- Initial HP multiplier: 1.0 (at wave 6)
+- A (upper limit): 10000 (HP cap)
+- k (growth rate): 0.1
+- HP at wave n: HP = A / (1 + (A/HP_base - 1) * exp(-k * (n - 6)))
+
+Where HP_base is the original HP from MobData.txt, scaled by wave.
+
+For waves 1-5: Standard progression.
+For waves 6+: Fixed spawn count, HP scaling.
+
+Dragon Boss Waves: Every 10th wave (10, 20, 30, etc.), the Dragon Boss appears in three phases. The Dragon Boss starts as Type 1, transitions to Type 2 after losing a portion of HP, then to Type 3. Each phase's HP is scaled using the logistic growth formula, growing with wave number.
+
+- Phase 1: Dragon Type 1 (HP scaled)
+- Phase 2: Dragon Type 2 (HP scaled, after Phase 1 HP is depleted)
+- Phase 3: Dragon Type 3 (HP scaled, after Phase 2 HP is depleted)
+
+Scaling: For wave n (10,20,30,...), HP_multiplier = A / (1 + (A/HP_base - 1) * exp(-k * (n/10 - 1))), where HP_base is the original HP for each type.
+
+Wave 1: Introduction to endless mode
+- 2 Pigman from row 2 left side
+- 2 Pigman from row 3 left side
+- 2 Pigman from row 4 left side
+
+Wave 2: Increase quantity
+- 3 Houndling from row 2 left side
+- 3 Houndling from row 3 left side
+- 3 Houndling from row 4 left side
+- [wait for 3 seconds]
+- 2 Pigman from row 2 left side
+- 2 Pigman from row 3 left side
+- 2 Pigman from row 4 left side
+
+Wave 3: Introduce stronger enemies
+- 2 Werewolf from row 2 left side
+- 2 Werewolf from row 3 left side
+- 2 Werewolf from row 4 left side
+- [wait for 5 seconds]
+- 3 Houndling from row 2 left side
+- 3 Houndling from row 3 left side
+- 3 Houndling from row 4 left side
+
+Wave 4: Mixed waves
+- 4 Pigman from row 2 left side
+- 4 Pigman from row 3 left side
+- 4 Pigman from row 4 left side
+- [wait for 3 seconds]
+- 2 Mini Mammon from row 2 left side
+- 2 Mini Mammon from row 3 left side
+- 2 Mini Mammon from row 4 left side
+
+Wave 5: Building intensity
+- 3 Werewolf from row 2 left side
+- 3 Werewolf from row 3 left side
+- 3 Werewolf from row 4 left side
+- [wait for 2 seconds]
+- 2 Birdman from row 2 left side
+- 2 Birdman from row 3 left side
+- 2 Birdman from row 4 left side
+- [wait for 5 seconds]
+- 5 Houndling from row 2 left side
+- 5 Houndling from row 3 left side
+- 5 Houndling from row 4 left side
+
+Starting from Wave 6: Endless waves with fixed spawn count and HP scaling
+- Spawn count: 10 enemies per wave (mixed types, gradually stronger)
+- All enemies enter from row 2, 3, 4 left side (same entry point)
+- Types: Rotate through tiers, with HP scaled by logistic formula
+- Example for wave 6: 
+  5 Houndling from row 2 left side (HP scaled)
+  3 Werewolf from row 3 left side (HP scaled)
+  2 Mini Mammon from row 4 left side (HP scaled)
+- Wave 7: 
+  4 Houndling from row 2 left side
+  4 Werewolf from row 3 left side
+  2 Armored Mammon from row 4 left side
+- And so on, increasing difficulty in types. All entries from row 2, 3, 4 left side.
+
+Dragon Boss Waves (every 10th wave):
+- Wave 10: 1 Dragon Boss (Type 1 → Type 2 → Type 3) from row 3 left side, HP scaled
+- Wave 20: 1 Dragon Boss (Type 1 → Type 2 → Type 3) from row 3 left side, HP scaled
+- Wave 30: 1 Dragon Boss (Type 1 → Type 2 → Type 3) from row 3 left side, HP scaled
+- Repeat cycle for higher waves. Boss enters from row 3 left side center position.
+
+[Level challenge strategy] Survive as long as possible by upgrading towers, managing resources, and adapting to increasing enemy strength. Focus on area damage and high DPS towers for endless waves. 
 
