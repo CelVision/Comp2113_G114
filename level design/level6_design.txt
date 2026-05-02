@@ -97,4 +97,5 @@
     an armored mammon from row 16 right side
 
 [Level Challenge Strategy] Use a number of arrow towers to clear up birdmans, use frozen towers to slow down batmans, use wardrums to increase the hitspeed
-                           of the towers to clear up groups of flying enemies, at last build up armor penetrating towers to break the armors
+                           of the towers to clear up groups of flying enemies, at last build up armor penetrating towers to break the armors, note that
+                           earthquake towers and laser towers are not useful in this level!
