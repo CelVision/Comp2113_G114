@@ -25,6 +25,7 @@
     a pigman from row 14 right side
     a pigman berserker from row 15 right side
     a pigman from row 16 right side
+
 3.	a pigman from column 5 up side
     a pigman from column 5 down side
     a pigman from row 14 right side
@@ -38,6 +39,7 @@
     a pigman from row 14 right side
     a spiderman from row 15 right side
     a pigman from row 16 right side
+
 4.	a pigman from row 14 right side
     a pigman from row 15 right side
     a pigman from row 16 right side
@@ -51,6 +53,7 @@
     a armored mammon from row 14 right side
     a armored mammon from row 15 right side
     a armored mammon from row 16 right side
+
 5.	a pigman from row 14 right side
     a spiderman from row 15 right side
     a pigman from row 16 right side
@@ -63,6 +66,7 @@
     [wait 1 second]
     a houndling from column 5 up side
     a houndling from column 5 down side
+
 6.	a pigman from row 14 right side
     a spiderman from row 15 right side
     a pigman from row 16 right side
