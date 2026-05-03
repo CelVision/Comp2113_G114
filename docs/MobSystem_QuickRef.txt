@@ -1,0 +1,235 @@
+=== QUICK REFERENCE: Using the Mob System ===
+
+PROJECT: BYTE RUSH Tower Defense
+FILE: src/core/MobSystem.h
+
+=== INITIALIZATION (Called Automatically) ===
+
+When MobSystemManager is created:
+```cpp
+MobSystemManager mobSystem(mobTypes, gameMap, playerMoney, baseHP);
+// Constructor automatically:
+// 1. Calls loadMobStatsFromFile() - loads HP/armor/speed from data/meta/MobData.txt
+// 2. Calls loadMobGolds() - loads gold rewards for each mob type
+// 3. Initializes all internal structures
+```
+
+=== PARSING SPAWN DATA ===
+
+Format recognized:
+```
+"3 pigman from row 5 left side"
+"2 houndling from row 10 right side"
+"5 birdman from column 20 top side"
+"1 dragon from column 50 down side"
+```
+
+Usage:
+```cpp
+int count = 0, mobType = 0, row = 0, col = 0;
+mobSystem.parseSpawnLine("2 pigman from row 5 left side", count, mobType, row, col);
+// Result: count=2, mobType=0 (pigman index), row=5, col=1 (left side)
+```
+
+=== APPLYING EFFECTS DURING GAMEPLAY ===
+
+Example 1: Frost Tower Slow
+```cpp
+MobModifier frostEffect;
+frostEffect.slowEffect = 50;          // Reduce speed by 50%
+frostEffect.isSlowed = true;
+frostEffect.slowDuration = 3.0;       // Effect lasts 3 seconds
+frostEffect.slowedUntilTime = gameTime + 3.0;
+
+mobSystem.applyMobModifier(targetMob, frostEffect, gameTime);
+```
+
+Example 2: Buff Tower (enemy reinforcement)
+```cpp
+MobModifier buffEffect;
+buffEffect.hpMultiplier = 1.5;        // 50% more health
+buffEffect.speedMultiplier = 1.2;     // 20% faster
+
+mobSystem.applyMobModifier(targetMob, buffEffect, gameTime);
+```
+
+Example 3: Armor Shred
+```cpp
+MobModifier shredEffect;
+shredEffect.armorBonus = -30;         // Remove 30 armor
+mobSystem.applyMobModifier(targetMob, shredEffect, gameTime);
+```
+
+=== DAMAGE AND HEALING ===
+
+Deal damage to mob:
+```cpp
+if (mobSystem.damageToMob(targetMob, 50)) {
+    // Mob died! Handle death (particles, sounds, etc.)
+    playerMoney += mobSystem.getMobReward(targetMob);
+}
+```
+
+Heal a mob:
+```cpp
+mobSystem.healMob(targetMob, 30);  // Restore 30 HP (capped at maxHealth)
+```
+
+Remove slow effect:
+```cpp
+mobSystem.removeMobSlow(targetMob, gameTime);  // Clear all slows immediately
+```
+
+=== QUERYING MOB STATS ===
+
+Get current armor (including bonuses):
+```cpp
+int effectiveArmor = mobSystem.getEffectiveMobArmor(targetMob);
+// Example: base armor 5 + bonus 10 = 15
+```
+
+Get current gold reward:
+```cpp
+int goldReward = mobSystem.getMobReward(targetMob);
+// Example: base gold 10 * multiplier 1.5 = 15
+```
+
+=== MOB STRUCTURE ACCESS ===
+
+Read mob properties:
+```cpp
+// Health stats
+int currentHP = mob.health;
+int maxHP = mob.maxHealth;
+
+// Position
+double posRow = mob.posRow;
+double posCol = mob.posCol;
+
+// Modifiers
+double currentSpeed = mob.modifiedSpeed;      // This is what mobs actually use
+int waveNumber = mob.waveNumber;
+```
+
+=== INTERNAL GAME LOOP (Automatic) ===
+
+The update() function automatically handles:
+
+1. Mob spawning based on wave timing
+   - parseSpawnLine() called for each spawn event
+   - New mobs initialized with stats from loadMobStatsFromFile()
+
+2. Each frame: updateMobDynamicStats() called for all active mobs
+   - Recalculates modifiedSpeed based on slow effects
+   - Checks if slow duration expired
+   - Removes expired slow effects
+   - Updates maxHealth based on multipliers
+
+3. Position updates use modifiedSpeed
+   - Slower mobs take longer to reach base
+   - Speed buffs/debuffs take effect immediately
+
+4. Death handling
+   - getMobReward() called to get gold
+   - baseGold includes goldMultiplier effects
+
+=== MOB TYPE INDEX MAPPING ===
+
+Index ↔ Name (for parseSpawnLine):
+0 = pigman
+1 = houndling
+2 = birdman
+3 = werewolf
+4 = slime
+5 = skeleton
+6 = demon
+7 = lizardman
+8 = golem
+9 = minotaur
+10 = hydra
+11 = kraken
+12 = dragon
+
+=== SPAWN POSITION CALCULATION ===
+
+From parseSpawnLine() output:
+- "left side" → col = 1
+- "right side" → col = 146
+- "top side" → row = 1
+- "down side" → row = 32
+
+=== MODIFIER STACKING EXAMPLE ===
+
+Tower 1 applies slow:
+```
+speedMultiplier = 0.7  (30% slow)
+```
+
+Tower 2 applies buff:
+```
+speedMultiplier = 1.2  (20% faster)
+```
+
+Result: 0.7 * 1.2 = 0.84 (slower than base but faster than just Tower 1)
+
+=== IMPORTANT NOTES ===
+
+1. updateMobDynamicStats() is called automatically each frame
+   - Don't manually recalculate unless necessary
+   - Stats are always up-to-date during game loop
+
+2. Slow effects have time-based expiration
+   - Once slowedUntilTime < gameTime, slow is removed
+   - No manual cleanup needed
+
+3. Multiple effects can combine
+   - Apply as many modifiers as needed
+   - Multipliers compound together
+   - Bonuses sum together
+
+4. Gold rewards include multipliers
+   - getMobReward() returns final gold amount
+   - goldMultiplier is applied automatically
+
+5. All stats are instance-specific
+   - Each mob can have different modifiers
+   - Applying effect to one mob doesn't affect others
+
+=== EXAMPLE: COMPLETE TOWER ATTACK ===
+
+```cpp
+// Tower targets nearby mob
+void fireAtMob(MobInstance& targetMob, double gameTime) {
+    int damage = 50;
+    
+    // Apply slow effect (tower special ability)
+    MobModifier towerEffect;
+    towerEffect.slowEffect = 40;
+    towerEffect.isSlowed = true;
+    towerEffect.slowDuration = 2.0;
+    mobSystem.applyMobModifier(targetMob, towerEffect, gameTime);
+    
+    // Deal damage
+    if (mobSystem.damageToMob(targetMob, damage)) {
+        // Mob died
+        int goldEarned = mobSystem.getMobReward(targetMob);
+        playerMoney += goldEarned;
+        
+        // Spawn death particles
+        // Play death sound
+    } else {
+        // Mob survived
+        // Play damage sound
+        // Show damage number
+    }
+}
+```
+
+=== COMPILATION & LINKING ===
+
+All functions are in: src/core/MobSystem.h
+Include with: #include "MobSystem.h" (in Game.cpp)
+
+Compile: g++ -std=c++11 -Wall src/core/Game.cpp -o Game.exe
+
+No external dependencies needed beyond standard C++ library.

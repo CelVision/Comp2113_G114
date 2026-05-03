@@ -1,0 +1,263 @@
+=== MOB SPAWN DATA MANAGEMENT & DYNAMIC STATS SYSTEM ===
+
+PROJECT: BYTE RUSH Tower Defense Game
+COMPONENT: MobSystem.h - Complete spawn data parsing and dynamic stat management
+
+=== OVERVIEW ===
+
+The new system provides complete control over:
+1. Reading spawn data from data/levels/levelX_design.txt files
+2. Associating mob types with their base stats from data/meta/MobData.txt
+3. Dynamically managing mob stats during gameplay (HP, speed, armor, gold rewards)
+4. Applying and removing buffs/debuffs to mobs in real-time
+
+=== DATA STRUCTURES ===
+
+1. MobModifier Structure
+   Purpose: Stores temporary modifications to a mob's stats
+   
+   Fields:
+   - speedMultiplier (double): Speed scaling (1.0 = no change, 0.5 = 50% slower, 2.0 = 2x faster)
+   - hpMultiplier (double): HP scaling (affects max health)
+   - armorBonus (int): Flat armor increase (e.g., +50 armor)
+   - goldMultiplier (double): Gold reward scaling
+   - damageMultiplier (double): Damage output scaling (for mob attacks)
+   - slowEffect (int): Additional slow percentage (stacks with existing)
+   - slowDuration (double): How long slow lasts in seconds
+   - isSlowed (bool): Whether mob is currently slowed
+   - slowedUntilTime (double): Game time when slow effect expires
+   
+   Default: All multipliers = 1.0, all bonuses/effects = 0, isSlowed = false
+
+2. Enhanced MobInstance Structure
+   New/Modified Fields:
+   - maxHealth (int): Maximum health after multipliers applied
+   - modifiedSpeed (double): Actual speed during gameplay (after all modifiers)
+   - modifier (MobModifier): Current active modifiers for this mob
+   - baseGold (int): Gold reward accounting for multipliers
+   - spawnPointRow, spawnPointCol (int): Original spawn location
+
+=== CORE FUNCTIONS ===
+
+Function 1: loadMobStatsFromFile()
+   Purpose: Read complete mob statistics from data/meta/MobData.txt
+   Called: Automatically during MobSystemManager construction
+   
+   Reads:
+   - Enemy name and index
+   - HP, Armor, Speed (floating point)
+   - Flying status
+   - Gold rewards
+   
+   Example format in MobData.txt:
+   ```
+   Enemy 1: Pigman
+   Symbol: p
+   HP: 200
+   Armor: 0
+   Speed: 2.0
+   Flying: No
+   Gold: 10
+   ```
+
+Function 2: parseSpawnLine(line, count, mobType, spawnRow, spawnCol)
+   Purpose: Parse a single spawn line from level design file
+   
+   Input: line (from levelX_design.txt)
+   Output: count, mobType, spawnRow, spawnCol (reference parameters)
+   
+   Supports formats:
+   - "X pigman from row R left side" → Spawns at (row R, column 1)
+   - "X houndling from row R right side" → Spawns at (row R, column 146)
+   - "X birdman from column C top side" → Spawns at (row 1, column C)
+   - "X werewolf from column C down side" → Spawns at (row 32, column C)
+   
+   Example usage:
+   ```
+   int count, mobType, row, col;
+   parseSpawnLine("3 pigman from row 5 left side", count, mobType, row, col);
+   // Result: count=3, mobType=0 (pigman), row=5, col=1
+   ```
+
+Function 3: applyMobModifier(mob, modifier, currentGameTime)
+   Purpose: Apply a modifier to a mob's stats
+   
+   Parameters:
+   - mob (MobInstance&): The mob to modify
+   - modifier (const MobModifier&): The modification to apply
+   - currentGameTime (double): Current game time (for slow effect timing)
+   
+   Behavior:
+   - Multiplies existing multipliers by new multipliers (stack effect)
+   - Adds armor/bonus values
+   - Sets slow effect timing
+   - Automatically recalculates effective stats
+   
+   Example usage:
+   ```
+   MobModifier slowBuff;
+   slowBuff.speedMultiplier = 0.5;      // 50% slower
+   slowBuff.isSlowed = true;
+   slowBuff.slowDuration = 5.0;         // Lasts 5 seconds
+   
+   applyMobModifier(myMob, slowBuff, gameTime);
+   ```
+
+Function 4: updateMobDynamicStats(mob, currentGameTime)
+   Purpose: Recalculate all dynamic stats based on current modifiers
+   Called: Automatically each frame in update() function
+   
+   Recalculates:
+   - modifiedSpeed (accounts for slow effects)
+   - maxHealth (based on hpMultiplier)
+   - baseGold (based on goldMultiplier)
+   - Removes expired slow effects
+   
+   Call this after applying any modifiers or each game frame.
+
+Function 5: removeMobSlow(mob, currentGameTime)
+   Purpose: Remove all slow effects from a mob
+   Parameters: mob reference and current game time
+   Automatically updates dynamic stats after removal
+
+Function 6: damageToMob(mob, damageAmount)
+   Purpose: Deal damage to a mob
+   Returns: true if mob dies, false otherwise
+   
+   Example usage:
+   ```
+   if (damageToMob(myMob, 50)) {
+       // Mob died, handle death effects
+   }
+   ```
+
+Function 7: healMob(mob, healAmount)
+   Purpose: Heal a mob (used for special towers like Vampire Tower)
+   Automatically caps healing at maxHealth
+
+Function 8: getEffectiveMobArmor(mob)
+   Purpose: Get mob's current armor including armor bonuses
+   Returns: int (base armor + armor bonus from modifiers)
+
+Function 9: getMobReward(mob)
+   Purpose: Get the gold reward for killing this mob
+   Returns: int (base gold * goldMultiplier)
+
+=== WORKFLOW EXAMPLE ===
+
+Scenario: Frost Tower slows enemies by 50% for 3 seconds
+
+1. Tower detects mob nearby and applies slow:
+   ```
+   MobModifier frostEffect;
+   frostEffect.slowEffect = 50;           // 50% slow
+   frostEffect.isSlowed = true;
+   frostEffect.slowDuration = 3.0;        // 3 seconds
+   mobSystem.applyMobModifier(mob, frostEffect, gameTime);
+   ```
+
+2. Each frame, update() automatically calls updateMobDynamicStats():
+   - If current time < slowedUntilTime: modifiedSpeed *= (1 - 0.5) = 0.5x
+   - If current time >= slowedUntilTime: slowEffect removed
+
+3. Mob moves at 50% speed while slow is active
+
+=== SPAWN DATA LOADING WORKFLOW ===
+
+1. Game initializes MobSystemManager
+   - Constructor calls loadMobGolds() and loadMobStatsFromFile()
+   - All mob types loaded from GameMap.cpp hardcoded data
+
+2. User selects level
+   - displayGameScreen() calls mobSystem.loadLevelDesign(levelSelected)
+   - File parsing reads all waves and spawn events
+
+3. Each spawn event is triggered:
+   - Event time <= currentWaveTime creates new MobInstance
+   - New mob gets stats from mobTypes[event.mobType]
+   - Modifier initialized to default (no buffs/debuffs)
+   - updateMobDynamicStats() called to set effective values
+
+4. Gameplay loop:
+   - Each frame: update() calls updateMobDynamicStats() for all mobs
+   - Handles slow expiration, stat recalculation
+   - When mob dies: getMobReward() calculates gold including multipliers
+
+=== INTEGRATION WITH TOWERS ===
+
+Towers can modify mobs using the system:
+
+Frost Tower (applies slow):
+   ```
+   MobModifier slowEffect;
+   slowEffect.slowEffect = 50;
+   slowEffect.slowDuration = 3.0;
+   slowEffect.isSlowed = true;
+   mobSystem.applyMobModifier(targetMob, slowEffect, gameTime);
+   ```
+
+Damage Buff Tower (increases health):
+   ```
+   MobModifier hpBuff;
+   hpBuff.hpMultiplier = 1.5;   // 1.5x health for enemies
+   mobSystem.applyMobModifier(targetMob, hpBuff, gameTime);
+   ```
+
+Thief Tower (increases gold):
+   ```
+   // This happens automatically via modifier.goldMultiplier
+   // Tower effect: multiply all nearby mob rewards by 1.5x
+   ```
+
+=== PRACTICAL TIPS ===
+
+1. Buff Stacking:
+   - Multipliers multiply together: 0.5x * 0.8x = 0.4x (40% of original)
+   - Multiple slows stack: 30% + 20% slow = 50% total slowdown
+
+2. Slow Effect Management:
+   - Always track slowedUntilTime to avoid permanent slows
+   - Call removeMobSlow() to clear slow status early if needed
+
+3. Dynamic Stat Calculation:
+   - Call updateMobDynamicStats() after any modifier application
+   - It's automatically called each frame, but manual calls ensure immediate effect
+
+4. Gold Rewards:
+   - baseGold is updated when stats are recalculated
+   - getMobReward() returns the current effective gold value
+   - Applies goldMultiplier from all active modifiers
+
+=== FILE LOCATIONS ===
+
+Source Files:
+- src/core/MobSystem.h: All mob management code
+- src/core/GameData.h: Mob and Tower structure definitions
+- src/core/Game.cpp: Main game loop and UI
+
+Data Files:
+- data/meta/MobData.txt: Mob statistics (read by loadMobStatsFromFile)
+- data/levels/levelX_design.txt: Level spawn data (read by loadLevelDesign)
+- data/maps/map_for_levelX.txt: Level path layout
+
+=== FUTURE ENHANCEMENTS ===
+
+Possible additions:
+1. Persistent buffs that last entire level
+2. Conditional slow effects (freeze if slow reaches 100%)
+3. Multi-hit slow stacking
+4. Armor reduction towers
+5. Damage reflection (damage multiplier < 0)
+6. Mob resurrection effects
+7. Stat preview UI (show speed/HP multipliers)
+
+=== SUMMARY ===
+
+The new system provides:
+✓ Complete spawn data parsing from level design files
+✓ Full stat management during gameplay
+✓ Flexible modifier system for buff/debuff effects
+✓ Real-time HP, speed, armor, and gold modifications
+✓ Automatic slow effect expiration
+✓ Easy integration with tower effects
+✓ Clean API for stat queries and modifications

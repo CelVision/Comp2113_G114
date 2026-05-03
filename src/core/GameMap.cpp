@@ -317,9 +317,9 @@ public:
         int endRow = centerRow + 1;
         int endCol = centerCol + 1;
         
-        // Check boundaries
-        if (startRow < 1 || endRow >= GameMap::ROWS - 1 || 
-            startCol < 1 || endCol >= GameMap::COLS - 1) {
+        // Check boundaries (all cells must be within valid map range)
+        if (startRow < 0 || endRow >= GameMap::ROWS || 
+            startCol < 0 || endCol >= GameMap::COLS) {
             return false;
         }
         
@@ -328,8 +328,8 @@ public:
             for (int c = startCol; c <= endCol; c++) {
                 TileType type = gameMap.grid[r][c].type;
                 
-                // Cannot place on path or base or already occupied towers
-                if (type == PATH || type == BASE || type == TOWER) {
+                // Cannot place on path or base or already occupied towers or blocked terrain
+                if (type == PATH || type == BASE || type == TOWER || type == BLOCKED) {
                     return false;
                 }
             }

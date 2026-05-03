@@ -10,7 +10,18 @@ Ma Taoran
 
 Basic Information of Our Game
 
-This is a tower defense game where players can accumulate currency to build defensive structures and fend off enemy attacks. There are a total of nine levels, and more buildings will be unlocked as you progress through the stages. At the end, there is an endless mode where you can use all the unlocked buildings. Enemy attacks will become increasingly intense until they overwhelm the player. After being defeated, your score will be calculated, so aim for a higher ranking on the leaderboard. Enjoy the game!
+This is a tower defense game where players can accumulate currency to build defensive structures and fend off enemy attacks. There are a total of ten selectable levels, with level 10 serving as the endless mode where you can use all the unlocked buildings. Enemy attacks will become increasingly intense until they overwhelm the player. After being defeated, your score will be calculated, so aim for a higher ranking on the leaderboard. Enjoy the game!
+
+Resource Packages
+
+The runtime resources are grouped by package-style paths:
+
+1. data/maps/map_for_levelX.txt - level map package, X is the 1-based level index
+2. data/levels/levelX_design.txt - wave package for the same 1-based level index
+3. data/meta/MobData.txt - mob data package
+4. data/meta/TowerData.txt - tower data package
+5. docs/UI_Design.txt - UI layout package
+6. docs/towers.txt / docs/mobs.txt - ASCII art and design reference packages
 
 Game Scene Arrangement
 

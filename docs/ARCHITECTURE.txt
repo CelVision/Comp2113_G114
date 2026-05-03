@@ -48,17 +48,17 @@ A Kingdom Rush-like tower defense game where:
 
 4. Documentation Files:
 
-   TowerData.txt
+   data/meta/TowerData.txt
    - Complete specifications for all 9 towers
    - Properties: cost, hp, attack speed, range, unlock level
    - Special effects for each tower type
 
-   MobData.txt
+   data/meta/MobData.txt
    - Complete specifications for all 13 enemies
    - Properties: hp, armor, speed, flying status
    - Special effects and counter-tower recommendations
 
-   Maps/map_for_levelX.txt and level design/levelX_design.txt
+   data/maps/map_for_levelX.txt and data/levels/levelX_design.txt
    - Path patterns for each level (1-9)
    - Difficulty progression guide
    - Infinite mode description
@@ -218,12 +218,12 @@ Easy to add:
 
 New Tower:
 1. Add Tower entry in loadTowerData()
-2. Update TowerData.txt
+2. Update data/meta/TowerData.txt
 3. Define unlock level
 
 New Enemy:
 1. Add Mob entry in loadMobData()
-2. Update MobData.txt
+2. Update data/meta/MobData.txt
 3. Define in which waves it appears
 
 New Level:

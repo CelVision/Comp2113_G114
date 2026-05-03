@@ -22,16 +22,16 @@ Game Files:
 Documentation Files:
 - README.md: Game overview and features
 - GameConfig.txt: Data loading system documentation
-- TowerData.txt: All tower specifications and properties
-- MobData.txt: All enemy specifications and properties
-- Maps/map_for_levelX.txt: Level path package files, X is the 1-based level index
-- UI_Design.txt: UI layout specifications
+- data/meta/TowerData.txt: All tower specifications and properties
+- data/meta/MobData.txt: All enemy specifications and properties
+- data/maps/map_for_levelX.txt: Level path package files, X is the 1-based level index
+- docs/UI_Design.txt: UI layout specifications
 
 Reference Files:
-- Maps/map_for_levelX.txt: Level map package files, X is the 1-based level index
-- level design/levelX_design.txt: Wave spawn package files, X is the same 1-based level index
-- towers.txt: Tower ASCII art representations
-- mobs.txt: Enemy descriptions from design
+- data/maps/map_for_levelX.txt: Level map package files, X is the 1-based level index
+- data/levels/levelX_design.txt: Wave spawn package files, X is the same 1-based level index
+- docs/towers.txt: Tower ASCII art representations
+- docs/mobs.txt: Enemy descriptions from design
 - Makefile: Build configuration
 
 === DATA SYSTEM OVERVIEW ===
@@ -59,18 +59,18 @@ Key Features:
 To add a new Tower:
 1. Go to GameMap.cpp, function loadTowerData()
 2. Add new Tower struct entry with all properties
-3. Update towers.txt with ASCII art
-4. Update TowerData.txt with documentation
+3. Update docs/towers.txt with ASCII art
+4. Update data/meta/TowerData.txt with documentation
 
 To add a new Enemy:
 1. Go to GameMap.cpp, function loadMobData()
 2. Add new Mob struct entry with all properties
-3. Update mobs.txt with ASCII representation
-4. Update MobData.txt with documentation
+3. Update docs/mobs.txt with ASCII representation
+4. Update data/meta/MobData.txt with documentation
 
 To add a new Level:
-1. Add or update Maps/map_for_levelX.txt for the level map package
-2. Add or update level design/levelX_design.txt for the wave package
+1. Add or update data/maps/map_for_levelX.txt for the level map package
+2. Add or update data/levels/levelX_design.txt for the wave package
 3. Modify generateWavyPath() or the map loader in GameMap.cpp if the route layout changes
 4. Test difficulty balance
 

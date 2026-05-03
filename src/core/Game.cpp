@@ -4,9 +4,11 @@
 #include <set>
 #include <iomanip>
 #include <cstdlib>
+#include <chrono>
 #include <conio.h>
 #include <windows.h>
 #include "GameData.h"
+#include "MobSystem.h"
 
 // Note: GameMap.cpp is included as a header-like implementation file
 #include "GameMap.cpp"
@@ -14,7 +16,7 @@
 using namespace std;
 
 // Constants
-const int MAP_COLS = 99;
+const int MAP_COLS = 147;
 const int LEVEL_COLS = 5;
 const int LEVEL_ROWS = 2;
 
@@ -50,6 +52,19 @@ void showCursor(bool show) {
     SetConsoleCursorInfo(hConsole, &cursorInfo);
 }
 
+// Function to set console window size to fit the game map
+void setConsoleSize() {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    
+    // Set buffer size to accommodate map (147 columns + margin, 33 rows + UI)
+    COORD bufferSize = {158, 50};
+    SetConsoleScreenBufferSize(hConsole, bufferSize);
+    
+    // Set window size (slightly smaller than buffer to show scrollbars if needed)
+    SMALL_RECT windowRect = {0, 0, 157, 49};  // 158x50 window (0-indexed, so 157x49)
+    SetConsoleWindowInfo(hConsole, TRUE, &windowRect);
+}
+
 // Helper: Check which towers overlap with 3x3 selection
 vector<int> getOverlappingTowers(GameMap& gameMap, int selRow, int selCol) {
     vector<int> overlappingTowers;
@@ -70,6 +85,55 @@ vector<int> getOverlappingTowers(GameMap& gameMap, int selRow, int selCol) {
         overlappingTowers.push_back(idx);
     }
     return overlappingTowers;
+}
+
+// Helper: Check if 3x3 placement area is valid (no road/path tiles)
+bool isValidPlacementLocation(GameMap& gameMap, int selRow, int selCol) {
+    int startRow = selRow - 1;
+    int startCol = selCol - 1;
+    int endRow = selRow + 1;
+    int endCol = selCol + 1;
+    
+    // Check boundaries (all cells must be within valid map range)
+    if (startRow < 0 || endRow >= GameMap::ROWS || 
+        startCol < 0 || endCol >= GameMap::COLS) {
+        return false;
+    }
+    
+    // Check each cell in 3x3 area - cannot place on PATH, BASE, TOWER, or BLOCKED
+    for (int r = startRow; r <= endRow; r++) {
+        for (int c = startCol; c <= endCol; c++) {
+            TileType type = gameMap.grid[r][c].type;
+            if (type == PATH || type == BASE || type == TOWER || type == BLOCKED) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+// Helper: Check whether a level is unlocked for the current player
+bool isLevelUnlockedForPlayer(int levelNum, const string& playerName) {
+    if (playerName == "test") {
+        return true;
+    }
+    return levelNum == 1;
+}
+
+// Helper: Number of towers unlocked at a given level
+int getUnlockedTowerCountForLevel(int levelNum, int towerCount) {
+    if (levelNum <= 0 || towerCount <= 0) {
+        return 0;
+    }
+
+    int unlocked = levelNum;
+    if (levelNum >= 9) {
+        unlocked = 9;
+    }
+    if (unlocked > towerCount) {
+        unlocked = towerCount;
+    }
+    return unlocked;
 }
 
 // Helper: Check if selection fully covers one tower (all 9 cells belong to same tower)
@@ -150,9 +214,10 @@ string displayStartScreen() {
 }
 
 // Display level selection screen
-int displayLevelSelect() {
+int displayLevelSelect(const string& playerName) {
     int selectedCol = 0;
     int selectedRow = 0;
+    string statusMessage;
     
     while (true) {
         clearScreen();
@@ -169,12 +234,15 @@ int displayLevelSelect() {
             
             for (int col = 0; col < LEVEL_COLS; col++) {
                 int levelNum = row * LEVEL_COLS + col + 1;
+                bool unlocked = isLevelUnlockedForPlayer(levelNum, playerName);
                 
                 if (selectedRow == row && selectedCol == col) {
                     setTextColor(COLOR_GREEN);
+                } else if (!unlocked) {
+                    setTextColor(COLOR_RED);
                 }
                 cout << "  ┌─────┐  ";
-                if (selectedRow == row && selectedCol == col) {
+                if ((selectedRow == row && selectedCol == col) || !unlocked) {
                     resetTextColor();
                 }
             }
@@ -182,16 +250,21 @@ int displayLevelSelect() {
             
             for (int col = 0; col < LEVEL_COLS; col++) {
                 int levelNum = row * LEVEL_COLS + col + 1;
+                bool unlocked = isLevelUnlockedForPlayer(levelNum, playerName);
                 
                 if (selectedRow == row && selectedCol == col) {
                     setTextColor(COLOR_GREEN);
+                } else if (!unlocked) {
+                    setTextColor(COLOR_RED);
                 }
-                if (levelNum <= 9) {
+                if (unlocked && levelNum <= 9) {
                     cout << "  │ " << levelNum << "   │  ";
+                } else if (unlocked && levelNum == 10) {
+                    cout << "  │  ∞  │  ";
                 } else {
-                    cout << "  │ ∞   │  ";
+                    cout << "  │LOCK │  ";
                 }
-                if (selectedRow == row && selectedCol == col) {
+                if ((selectedRow == row && selectedCol == col) || !unlocked) {
                     resetTextColor();
                 }
             }
@@ -199,12 +272,15 @@ int displayLevelSelect() {
             
             for (int col = 0; col < LEVEL_COLS; col++) {
                 int levelNum = row * LEVEL_COLS + col + 1;
+                bool unlocked = isLevelUnlockedForPlayer(levelNum, playerName);
                 
                 if (selectedRow == row && selectedCol == col) {
                     setTextColor(COLOR_GREEN);
+                } else if (!unlocked) {
+                    setTextColor(COLOR_RED);
                 }
                 cout << "  └─────┘  ";
-                if (selectedRow == row && selectedCol == col) {
+                if ((selectedRow == row && selectedCol == col) || !unlocked) {
                     resetTextColor();
                 }
             }
@@ -212,6 +288,11 @@ int displayLevelSelect() {
         
         cout << "\n\n";
         cout << string(20, ' ') << "Use ← → ↑ ↓ to navigate, ENTER to select" << endl;
+        if (!statusMessage.empty()) {
+            setTextColor(COLOR_RED);
+            cout << string(20, ' ') << statusMessage << endl;
+            resetTextColor();
+        }
         
         // Display selection indicator
         cout << "\n" << string(20, ' ') << "Selected: Level ";
@@ -229,7 +310,10 @@ int displayLevelSelect() {
         int key = _getch();
         
         if (key == 13) { // Enter key
-            return selectedLevel;
+            if (isLevelUnlockedForPlayer(selectedLevel, playerName)) {
+                return selectedLevel;
+            }
+            statusMessage = "Level " + to_string(selectedLevel) + " is locked. Clear level 1 first.";
         } else if (key == 224) { // Extended keys (arrow keys)
             int extKey = _getch();
             
@@ -261,15 +345,10 @@ void displayGameScreen(string playerName, int levelSelected) {
     // Initialize game map manager
     GameMapManager mapManager;
     
-    // Create path for the selected level
-    vector<pair<int, int>> pathCoords;
-    mapManager.createPathForLevel(levelSelected, pathCoords);
+    // Load map from file for the selected level
+    mapManager.loadMapFromFile(levelSelected);
     
-    // Initialize buildable areas
-    mapManager.initializeBuildableAreas();
-    
-    // Set base camp at the end of the map
-    mapManager.setBaseCamp(16, 97);
+    // Note: mob system will be initialized after basic player state (money, HP)
     
     // Tower placement mode
     int selRow = 16;  // Start at middle
@@ -279,6 +358,12 @@ void displayGameScreen(string playerName, int levelSelected) {
     int flashCounter = 0;
     int money = 10000;
     int baseHP = 10;
+
+    // Initialize mob system (needs money/baseHP refs)
+    MobSystemManager mobSystem(mapManager.getAllMobs(), mapManager.getGameMap(), money, baseHP);
+    mobSystem.findGlobalPath();
+    mobSystem.loadLevelDesign(levelSelected);
+    int unlockedTowerCount = getUnlockedTowerCountForLevel(levelSelected, (int)mapManager.getAllTowers().size());
     
     bool placingTowers = true;
     
@@ -287,6 +372,10 @@ void displayGameScreen(string playerName, int levelSelected) {
     int sellTowerIndex = -1;
     int sellTowerPrice = 0;
     
+    // Error message display
+    string errorMessage = "";
+    int errorMessageDuration = 0;  // Frames to display error
+    
     // Hide cursor for better appearance
     showCursor(false);
     
@@ -294,19 +383,44 @@ void displayGameScreen(string playerName, int levelSelected) {
     setCursorPosition(0, 0);
     cout << "\n";
     cout << string(20, '=') << " BYTE RUSH - Level " << levelSelected << " " << string(20, '=') << endl;
-    cout << "Player: " << playerName << " | Money: $" << money << " | HP: " << baseHP << "/10" << endl;
+        // Wave info: remaining/total for current wave
+        int waveRemaining = mobSystem.getRemainingInCurrentWave();
+        int waveTotal = mobSystem.getTotalSpawnsCurrentWave();
+        cout << "Player: " << playerName << " | Money: $" << money << " | HP: " << baseHP << "/10"
+            << " | wave: " << waveRemaining << "/" << waveTotal << endl;
     cout << string(75, '=') << endl;
     cout << "\n";
     int mapStartLine = 5;  // Line where map starts
     
+    auto lastFrameTime = chrono::steady_clock::now();
+    
     while (placingTowers) {
+        // Use real elapsed time so speed value means tiles per second.
+        auto now = chrono::steady_clock::now();
+        double frameTime = chrono::duration<double>(now - lastFrameTime).count();
+        lastFrameTime = now;
+
+        // Clamp to avoid giant jumps after pauses.
+        if (frameTime < 0.0) frameTime = 0.0;
+        if (frameTime > 0.1) frameTime = 0.1;
+
+        mobSystem.update(frameTime);
+        
+        // Update error message timer
+        if (errorMessageDuration > 0) {
+            errorMessageDuration--;
+        }
+        
         // Update flash effect
         flashCounter++;
         showFlash = (flashCounter / 20) % 2 == 0;  // Flash every 20 frames (slower)
         
-        // Update header info
-        setCursorPosition(0, 1);
-        cout << "Player: " << playerName << " | Money: $" << setfill(' ') << setw(5) << money << " | HP: " << baseHP << "/10   ";
+           // Update header info (also show current wave remaining/total)
+           setCursorPosition(0, 1);
+           int waveRemaining = mobSystem.getRemainingInCurrentWave();
+           int waveTotal = mobSystem.getTotalSpawnsCurrentWave();
+           cout << "Player: " << playerName << " | Money: $" << setfill(' ') << setw(5) << money 
+               << " | HP: " << baseHP << "/10" << " | wave: " << waveRemaining << "/" << waveTotal << "   ";
         
         // Render game map with selection bracket at fixed position
         setCursorPosition(0, mapStartLine);
@@ -314,6 +428,7 @@ void displayGameScreen(string playerName, int levelSelected) {
         // Get map and towers references
         GameMap& gameMap = mapManager.getGameMap();
         vector<Tower>& towers = mapManager.getAllTowers();
+        const vector<NavigationRoute>& routes = mobSystem.getNavigationRoutes();
         
         // Save current position for later restoration
         int currentMapLine = mapStartLine;
@@ -330,8 +445,11 @@ void displayGameScreen(string playerName, int levelSelected) {
                 bool inPreview = inPlacement && previewTowerIndex >= 0;
                 
                 if (inPreview) {
-                    // Show solid cyan 3x3 square with tower ASCII art
-                    setTextColor(COLOR_CYAN);
+                    // Check if placement is valid
+                    bool isValidPlacement = isValidPlacementLocation(gameMap, selRow, selCol);
+                    
+                    // Show cyan for valid, red for invalid
+                    setTextColor(isValidPlacement ? COLOR_CYAN : COLOR_RED);
                     
                     // Determine which part of the tower ASCII art to display
                     int relRow = i - (selRow - 1);  // 0, 1, or 2 (top, middle, bottom of 3x3)
@@ -350,22 +468,44 @@ void displayGameScreen(string playerName, int levelSelected) {
                     }
                     resetTextColor();
                 } else if (inPlacement) {
-                    // Check for tower overlaps
+                    // Check if this is a valid placement area
+                    bool isValidPlacement = isValidPlacementLocation(gameMap, selRow, selCol);
                     bool isTowerCell = (tile.type == TOWER && tile.towerIndex >= 0);
+                    bool isRoadCell = (tile.type == PATH);
                     
                     if (isTowerCell) {
                         // Show overlapping tower cells in red
                         setTextColor(COLOR_RED);
                         cout << tile.displayChar;
                         resetTextColor();
+                    } else if (isRoadCell || !isValidPlacement) {
+                        // Show red for road cells or invalid placement areas
+                        setTextColor(COLOR_RED);
+                        cout << "█";
+                        resetTextColor();
                     } else {
-                        // Show cyan for empty placement area
+                        // Show cyan for empty valid placement area
                         setTextColor(COLOR_CYAN);
                         cout << "█";
                         resetTextColor();
                     }
                 } else {
                     // Normal rendering
+                    bool isCheckpoint = false;
+                    for (const auto& route : routes) {
+                        if (route.checkpoint.first == i && route.checkpoint.second == j) {
+                            isCheckpoint = true;
+                            break;
+                        }
+                    }
+
+                    if (isCheckpoint && tile.type == PATH) {
+                        setTextColor(COLOR_GREEN);
+                        cout << 'C';
+                        resetTextColor();
+                        continue;
+                    }
+
                     switch (tile.type) {
                         case PATH:
                             setTextColor(COLOR_YELLOW);
@@ -395,13 +535,17 @@ void displayGameScreen(string playerName, int levelSelected) {
             }
         }
         
+        // Render mobs on top of the map
+        mobSystem.renderMobs(mapStartLine);
+        
         // Display info at bottom
         int infoLine = mapStartLine + GameMap::ROWS;
         setCursorPosition(0, infoLine);
         cout << string(75, '=') << endl;
         
         setCursorPosition(0, infoLine + 1);
-        cout << "Arrow Keys: Move | 1-9: Tower | Enter: Plant/Sell | Q: Exit                     ";
+        cout << "Arrow Keys: Move | 1-" << unlockedTowerCount << ": Tower | Enter: Plant/Sell | Q: Exit    Mobs: " 
+             << mobSystem.getActiveMobCount() << "              ";
         
         // Check for overlapping towers
         vector<int> overlapping = getOverlappingTowers(gameMap, selRow, selCol);
@@ -409,7 +553,13 @@ void displayGameScreen(string playerName, int levelSelected) {
         bool isFullCoverage = checkFullTowerCoverage(gameMap, selRow, selCol, coveredTowerIndex);
         
         setCursorPosition(0, infoLine + 2);
-        if (isFullCoverage && coveredTowerIndex >= 0) {
+        if (errorMessageDuration > 0) {
+            // Display error message
+            setTextColor(COLOR_RED);
+            cout << "ERROR: " << errorMessage;
+            resetTextColor();
+            cout << string(max(0, 70 - (int)(6 + errorMessage.length())), ' ');
+        } else if (isFullCoverage && coveredTowerIndex >= 0) {
             // Full tower coverage - offer sell
             if (sellModeState == 0) {
                 cout << "SELL TOWER: " << towers[coveredTowerIndex].name << " | Press ENTER to see price";
@@ -429,7 +579,7 @@ void displayGameScreen(string playerName, int levelSelected) {
             if (mapManager.canPlaceTower(selRow, selCol, previewTowerIndex)) {
                 cout << " [CAN PLACE]" << string(20, ' ');
             } else {
-                cout << " [CANNOT PLACE]" << string(15, ' ');
+                cout << " [CANNOT PLACE - Road/Boundary]" << string(10, ' ');
             }
         } else {
             cout << "Tower Selection: Press 1-9 for towers" << string(35, ' ');
@@ -478,10 +628,23 @@ void displayGameScreen(string playerName, int levelSelected) {
                     }
                 } else {
                     // Normal tower placement
-                    if (previewTowerIndex >= 0 && mapManager.canPlaceTower(selRow, selCol, previewTowerIndex)) {
-                        vector<int> overlapCheck = getOverlappingTowers(gameMap, selRow, selCol);
-                        if (overlapCheck.size() == 0) {  // No overlaps
-                            if (money >= towers[previewTowerIndex].cost) {
+                    if (previewTowerIndex >= 0) {
+                        if (!mapManager.canPlaceTower(selRow, selCol, previewTowerIndex)) {
+                            // Placement is invalid
+                            errorMessage = "Cannot place tower on road or boundary!";
+                            errorMessageDuration = 120;  // Show for 2 seconds (120 frames at 60 FPS)
+                        } else {
+                            vector<int> overlapCheck = getOverlappingTowers(gameMap, selRow, selCol);
+                            if (overlapCheck.size() > 0) {
+                                // Overlapping with existing tower
+                                errorMessage = "Cannot overlap with existing tower!";
+                                errorMessageDuration = 120;
+                            } else if (money < towers[previewTowerIndex].cost) {
+                                // Insufficient money
+                                errorMessage = "Insufficient money! Cost: $" + to_string(towers[previewTowerIndex].cost) + " | Have: $" + to_string(money);
+                                errorMessageDuration = 120;
+                            } else {
+                                // Valid placement
                                 mapManager.placeTowerAt(selRow, selCol, previewTowerIndex);
                                 money -= towers[previewTowerIndex].cost;
                                 previewTowerIndex = -1;
@@ -491,8 +654,16 @@ void displayGameScreen(string playerName, int levelSelected) {
                 }
             } else if (key >= '1' && key <= '9') {
                 // Number key - select tower for preview
-                previewTowerIndex = (key - '1');
-                sellModeState = 0;  // Reset sell mode
+                int requestedTowerIndex = (key - '1');
+                if (requestedTowerIndex < unlockedTowerCount) {
+                    previewTowerIndex = requestedTowerIndex;
+                    sellModeState = 0;  // Reset sell mode
+                } else {
+                    previewTowerIndex = -1;
+                    sellModeState = 0;
+                    errorMessage = "Tower " + to_string(requestedTowerIndex + 1) + " is locked until level " + to_string(requestedTowerIndex + 1) + ".";
+                    errorMessageDuration = 120;
+                }
             } else if (key == 224) {
                 // Extended keys (arrow keys)
                 int extKey = _getch();
@@ -540,7 +711,7 @@ void gameLoop() {
         playerName = displayStartScreen();
         
         // Level selection
-        int levelSelected = displayLevelSelect();
+        int levelSelected = displayLevelSelect(playerName);
         
         // Game screen
         displayGameScreen(playerName, levelSelected);
@@ -573,6 +744,9 @@ int main() {
     
     // Set console title
     system("title BYTE RUSH - Tower Defense Game");
+    
+    // Set console window and buffer size to fit the game map
+    setConsoleSize();
     
     gameLoop();
     
