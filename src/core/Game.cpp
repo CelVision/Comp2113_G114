@@ -262,7 +262,7 @@ int displayLevelSelect(const string& playerName) {
                 } else if (unlocked && levelNum == 10) {
                     cout << "  │  ∞  │  ";
                 } else {
-                    cout << "  │ LOCK │ ";
+                    cout << "  │ LOCK │  ";
                 }
                 if ((selectedRow == row && selectedCol == col) || !unlocked) {
                     resetTextColor();
