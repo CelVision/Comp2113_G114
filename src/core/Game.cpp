@@ -348,6 +348,10 @@ void displayGameScreen(string playerName, int levelSelected) {
     // Load map from file for the selected level
     mapManager.loadMapFromFile(levelSelected);
     
+    // Create path for the level
+    vector<pair<int, int>> pathCoords;
+    mapManager.createPathForLevel(levelSelected, pathCoords);
+    
     // Note: mob system will be initialized after basic player state (money, HP)
     
     // Tower placement mode
@@ -544,7 +548,7 @@ void displayGameScreen(string playerName, int levelSelected) {
         cout << string(75, '=') << endl;
         
         setCursorPosition(0, infoLine + 1);
-        cout << "Arrow Keys: Move | 1-" << unlockedTowerCount << ": Tower | Enter: Plant/Sell | Q: Exit    Mobs: " 
+        cout << "Arrow Keys: Move | E: Next wave | 1-" << unlockedTowerCount << ": Tower | Enter: Plant/Sell | Q: Exit    Mobs: " 
              << mobSystem.getActiveMobCount() << "              ";
         
         // Check for overlapping towers
@@ -652,6 +656,8 @@ void displayGameScreen(string playerName, int levelSelected) {
                         }
                     }
                 }
+            } else if (key == 'e' || key == 'E') {
+                mobSystem.startNextWave();
             } else if (key >= '1' && key <= '9') {
                 // Number key - select tower for preview
                 int requestedTowerIndex = (key - '1');

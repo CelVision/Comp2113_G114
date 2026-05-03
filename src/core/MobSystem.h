@@ -150,59 +150,95 @@ public:
         double designTime = 0;
         
         while (getline(file, line)) {
+            // Trim leading whitespace so indented spawn lines are handled.
+            size_t firstNonSpace = line.find_first_not_of(" \t\r\n");
+            if (firstNonSpace == string::npos) continue;
+            line = line.substr(firstNonSpace);
+
             // Skip empty lines and comments
             if (line.empty() || line[0] == '-' || line[0] == '[') continue;
-            
-            // Check for wave header (e.g., "1.1", "2.1")
-            if (line.find_first_of("0123456789") == 0) {
-                // Extract wave data format: "X.Y mobname from row R"
-                // Example: "1.1 pigman from row 3 left side"
-                
-                int waveNum = stoi(line.substr(0, line.find('.')));
-                
-                if (currentWave.waveNumber != waveNum && currentWave.waveNumber > 0) {
-                    waves.push_back(currentWave);
-                    currentWave.spawnEvents.clear();
-                    currentWave.totalDuration = 0;
-                    currentWave.totalDuration = 0;
-                }
-                
-                currentWave.waveNumber = waveNum;
-                
-                // Parse spawn data
-                SpawnEvent event;
-                event.spawnTime = designTime;
-                event.routeIndex = -1;
-                
-                // Extract mob type and row
-                if (line.find("pigman") != string::npos) {
-                    event.mobType = 0; // Pigman
-                    event.speed = 2.0; // tiles per second
-                } else if (line.find("houndling") != string::npos) {
-                    event.mobType = 1;
-                    event.speed = 4.0;
-                } else if (line.find("werewolf") != string::npos) {
-                    event.mobType = 2;
-                    event.speed = 3.0;
+
+            // Process lines starting with digits
+            if (isdigit(line[0])) {
+                // Determine if this is a wave header line like "1.1 pigman..."
+                bool isWaveHeader = (line.find('.') != string::npos && line.find('.') < line.find(' '));
+                if (isWaveHeader) {
+                    int waveNum = stoi(line.substr(0, line.find('.')));
+                    
+                    if (currentWave.waveNumber != waveNum && currentWave.waveNumber > 0) {
+                        waves.push_back(currentWave);
+                        currentWave.spawnEvents.clear();
+                        currentWave.totalDuration = 0;
+                    }
+                    
+                    currentWave.waveNumber = waveNum;
+
+                    // Parse spawn data from a standard wave header line
+                    SpawnEvent event;
+                    event.spawnTime = designTime;
+                    event.routeIndex = -1;
+                    
+                    if (line.find("pigman") != string::npos) {
+                        event.mobType = 0;
+                        event.speed = 2.0;
+                    } else if (line.find("houndling") != string::npos) {
+                        event.mobType = 1;
+                        event.speed = 4.0;
+                    } else if (line.find("werewolf") != string::npos) {
+                        event.mobType = 2;
+                        event.speed = 3.0;
+                    } else {
+                        continue;
+                    }
+                    
+                    size_t rowPos = line.find("row");
+                    if (rowPos != string::npos) {
+                        size_t numStart = rowPos + 4;
+                        event.spawnRow = stoi(line.substr(numStart));
+                    }
+                    
+                    event.spawnCol = findSpawnColumnForRow(event.spawnRow);
+                    event.routeIndex = findRouteIndexForSpawn(event.spawnRow, event.spawnCol);
+                    currentWave.spawnEvents.push_back(event);
+                    currentWave.totalDuration = event.spawnTime + 5.0;
                 } else {
-                    continue; // Unknown mob type
+                    // Additional mob spawn line like "1 pigman from row 3 left side"
+                    int count = stoi(line);
+                    size_t nextPos = line.find_first_not_of(" \t", line.find_first_of("0123456789"));
+                    string spawnLine = (nextPos == string::npos ? string() : line.substr(nextPos));
+                    
+                    for (int i = 0; i < count; i++) {
+                        SpawnEvent event;
+                        event.spawnTime = designTime;
+                        event.routeIndex = -1;
+                        
+                        if (spawnLine.find("pigman") != string::npos) {
+                            event.mobType = 0;
+                            event.speed = 2.0;
+                        } else if (spawnLine.find("houndling") != string::npos) {
+                            event.mobType = 1;
+                            event.speed = 4.0;
+                        } else if (spawnLine.find("werewolf") != string::npos) {
+                            event.mobType = 2;
+                            event.speed = 3.0;
+                        } else {
+                            continue;
+                        }
+                        
+                        size_t rowPos = spawnLine.find("row");
+                        if (rowPos != string::npos) {
+                            size_t numStart = rowPos + 4;
+                            event.spawnRow = stoi(spawnLine.substr(numStart));
+                        }
+
+                        event.spawnCol = findSpawnColumnForRow(event.spawnRow);
+                        event.routeIndex = findRouteIndexForSpawn(event.spawnRow, event.spawnCol);
+                        currentWave.spawnEvents.push_back(event);
+                    }
+                    currentWave.totalDuration = designTime + 5.0;
                 }
-                
-                // Extract row number
-                size_t rowPos = line.find("row");
-                if (rowPos != string::npos) {
-                    size_t numStart = rowPos + 4;
-                    event.spawnRow = stoi(line.substr(numStart));
-                }
-                
-                // Find spawn column on this row (prefer an explicit '+' spawn tile)
-                event.spawnCol = findSpawnColumnForRow(event.spawnRow);
-                event.routeIndex = findRouteIndexForSpawn(event.spawnRow, event.spawnCol);
-                
-                currentWave.spawnEvents.push_back(event);
-                currentWave.totalDuration = event.spawnTime + 5.0; // Default 5s between spawns
             }
-            
+
             // Check for wait command: "[wait for X seconds]"
             if (line.find("[wait") != string::npos) {
                 size_t numStart = line.find("for") + 4;
@@ -439,36 +475,20 @@ public:
                     // Initialize modifier (defaults to no modifications)
                     newMob.modifier = MobModifier();
                     
-                    // Set route and checkpoint info
-                    newMob.routeIndex = event.routeIndex;
+                    // Set route and checkpoint info (not needed for greedy algorithm)
+                    newMob.routeIndex = -1; // Not used in greedy algorithm
                     newMob.routeStepIndex = 0;
                     newMob.passedCheckpoint = false;
                     newMob.checkpointIndex = -1;
                     newMob.spawnPointRow = event.spawnRow;
                     newMob.spawnPointCol = event.spawnCol;
 
-                    const vector<pair<int, int>>* routeNodes = nullptr;
-                    if (newMob.routeIndex >= 0 && newMob.routeIndex < (int)navigationRoutes.size()) {
-                        routeNodes = &navigationRoutes[newMob.routeIndex].nodes;
-                        newMob.checkpointIndex = navigationRoutes[newMob.routeIndex].checkpointNodeIndex;
-                    } else if (!globalPath.empty()) {
-                        routeNodes = &globalPath;
-                    }
-                    
                     // Update dynamic stats based on current game state
                     updateMobDynamicStats(newMob, gameTime);
                     
-                    // Set initial velocity towards first waypoint
-                    if (routeNodes != nullptr && routeNodes->size() >= 2) {
-                        double nextRow = (*routeNodes)[1].first;
-                        double nextCol = (*routeNodes)[1].second;
-                        double dist = sqrt(pow(nextRow - newMob.posRow, 2) + 
-                                         pow(nextCol - newMob.posCol, 2));
-                        if (dist > 0) {
-                            newMob.velocityRow = (nextRow - newMob.posRow) / dist * newMob.modifiedSpeed;
-                            newMob.velocityCol = (nextCol - newMob.posCol) / dist * newMob.modifiedSpeed;
-                        }
-                    }
+                    // Initial velocity will be set by greedy algorithm
+                    newMob.velocityRow = 0;
+                    newMob.velocityCol = 0;
                     
                     activeMobs.push_back(newMob);
                 }
@@ -481,59 +501,15 @@ public:
             }
         }
         
-        // Update mob positions and handle collision avoidance
+        // Update mob positions using new greedy pathfinding algorithm
         for (auto& mob : activeMobs) {
             if (!mob.isAlive) continue;
             
             // Update dynamic stats each frame (handles slow effects, buffs, etc.)
             updateMobDynamicStats(mob, gameTime);
 
-            const vector<pair<int, int>>* routeNodes = nullptr;
-            if (mob.routeIndex >= 0 && mob.routeIndex < (int)navigationRoutes.size()) {
-                routeNodes = &navigationRoutes[mob.routeIndex].nodes;
-            } else {
-                routeNodes = &globalPath;
-            }
-            
-            // Update position
-            mob.posRow += mob.velocityRow * dt;
-            mob.posCol += mob.velocityCol * dt;
-            
-            // Update waypoint if reached
-            if (routeNodes != nullptr && mob.routeStepIndex < (int)routeNodes->size()) {
-                double nextRow = (*routeNodes)[mob.routeStepIndex].first;
-                double nextCol = (*routeNodes)[mob.routeStepIndex].second;
-                double dist = sqrt(pow(nextRow - mob.posRow, 2) + pow(nextCol - mob.posCol, 2));
-                
-                if (dist < 1.0) {
-                    if (!mob.passedCheckpoint && mob.checkpointIndex >= 0 && mob.routeStepIndex >= mob.checkpointIndex) {
-                        mob.passedCheckpoint = true;
-                    }
-
-                    mob.routeStepIndex++;
-                    
-                    // Update velocity to next waypoint using modified speed
-                    if (mob.routeStepIndex < (int)routeNodes->size()) {
-                        nextRow = (*routeNodes)[mob.routeStepIndex].first;
-                        nextCol = (*routeNodes)[mob.routeStepIndex].second;
-                        dist = sqrt(pow(nextRow - mob.posRow, 2) + pow(nextCol - mob.posCol, 2));
-                        if (dist > 0) {
-                            mob.velocityRow = (nextRow - mob.posRow) / dist * mob.modifiedSpeed;
-                            mob.velocityCol = (nextCol - mob.posCol) / dist * mob.modifiedSpeed;
-                        }
-                    }
-                }
-            }
-            
-            // Check if reached base
-            if (routeNodes != nullptr && mob.routeStepIndex >= (int)routeNodes->size()) {
-                mob.isAlive = false;
-                mob.reachedBase = true;
-                mob.passedCheckpoint = true;
-                // Deduct one HP from base per mob reaching
-                baseHPRef -= 1;
-                if (baseHPRef < 0) baseHPRef = 0;
-            }
+            // Use new greedy pathfinding algorithm
+            updateMobPositionGreedy(mob, dt);
         }
         
         // Keep mobs strictly on walkable tiles (PATH/BASE) by snapping any drift.
@@ -635,6 +611,97 @@ public:
         for (const auto &m : activeMobs) if (m.spawnWaveId == currentWaveIndex && m.isAlive) remaining++;
         for (const auto &e : waves[currentWaveIndex].spawnEvents) if (e.spawnTime > currentWaveTime) remaining++;
         return remaining;
+    }
+
+    void startNextWave() {
+        if (currentWaveIndex < 0 || currentWaveIndex >= (int)waves.size()) return;
+        if (currentWaveIndex < (int)waves.size() - 1) {
+            currentWaveIndex++;
+            currentWaveTime = 0;
+        }
+    }
+
+    // Find base camp position
+    pair<int, int> findBaseCamp() const {
+        for (int i = 0; i < GameMap::ROWS; i++) {
+            for (int j = 0; j < GameMap::COLS; j++) {
+                if (gameMap.grid[i][j].type == BASE) {
+                    return make_pair(i, j);
+                }
+            }
+        }
+        return make_pair(-1, -1); // Not found
+    }
+
+    // Calculate distance between two points
+    double calculateDistance(int row1, int col1, int row2, int col2) const {
+        return sqrt(pow(row1 - row2, 2) + pow(col1 - col2, 2));
+    }
+
+    // New pathfinding algorithm: greedy approach towards base camp
+    void updateMobPositionGreedy(MobInstance& mob, double dt) {
+        if (!mob.isAlive) return;
+
+        // Find base camp position
+        pair<int, int> basePos = findBaseCamp();
+        if (basePos.first == -1 || basePos.second == -1) return;
+
+        int currentRow = (int)round(mob.posRow);
+        int currentCol = (int)round(mob.posCol);
+        double currentDist = calculateDistance(currentRow, currentCol, basePos.first, basePos.second);
+
+        // Check 4 neighboring positions
+        int dr[] = {-1, 1, 0, 0};
+        int dc[] = {0, 0, -1, 1};
+
+        double bestDist = currentDist;
+        int bestRow = currentRow;
+        int bestCol = currentCol;
+
+        for (int i = 0; i < 4; i++) {
+            int nextRow = currentRow + dr[i];
+            int nextCol = currentCol + dc[i];
+
+            // Check if position is valid and walkable
+            if (nextRow >= 0 && nextRow < GameMap::ROWS && 
+                nextCol >= 0 && nextCol < GameMap::COLS &&
+                isWalkableTile(nextRow, nextCol)) {
+                
+                double nextDist = calculateDistance(nextRow, nextCol, basePos.first, basePos.second);
+                if (nextDist < bestDist) {
+                    bestDist = nextDist;
+                    bestRow = nextRow;
+                    bestCol = nextCol;
+                }
+            }
+        }
+
+        // If found a better position, move towards it
+        if (bestRow != currentRow || bestCol != currentCol) {
+            double dist = calculateDistance(currentRow, currentCol, bestRow, bestCol);
+            if (dist > 0) {
+                mob.velocityRow = (bestRow - currentRow) / dist * mob.modifiedSpeed;
+                mob.velocityCol = (bestCol - currentCol) / dist * mob.modifiedSpeed;
+            }
+        } else {
+            // No better position found, stop moving
+            mob.velocityRow = 0;
+            mob.velocityCol = 0;
+        }
+
+        // Update position
+        mob.posRow += mob.velocityRow * dt;
+        mob.posCol += mob.velocityCol * dt;
+
+        // Check if reached base
+        int r = (int)round(mob.posRow);
+        int c = (int)round(mob.posCol);
+        if (r == basePos.first && c == basePos.second) {
+            mob.isAlive = false;
+            mob.reachedBase = true;
+            baseHPRef -= 1;
+            if (baseHPRef < 0) baseHPRef = 0;
+        }
     }
 
     // ============ NEW FUNCTIONS FOR SPAWN DATA MANAGEMENT ============
