@@ -3,7 +3,7 @@
 CXX = g++
 CXXFLAGS = -std=c++11 -Wall
 TARGET = Game.exe
-SRC = Game.cpp
+SRC = src/core/Game.cpp
 
 all: $(TARGET)
 
@@ -11,7 +11,7 @@ $(TARGET): $(SRC)
     $(CXX) $(CXXFLAGS) $(SRC) -o $(TARGET)
 
 run: $(TARGET)
-    ./$(TARGET)
+    .\$(TARGET)
 
 clean:
     rm -f $(TARGET)

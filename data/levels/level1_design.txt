@@ -1,6 +1,7 @@
-Level 1: Simple straight path withn only one turn
+Level 1: Simple straight path with only one turn
 
 -wave amount:4 waves
+
 1.1 pigman from row 3 left side
 
 2.1 pigman from row 2 left side
@@ -23,5 +24,4 @@ Level 1: Simple straight path withn only one turn
   2 pigman from row 3 left side
   2 pigman from row 4 left side
 
-
-[Level challeng strategy] get familiar with tower planting, plant as fast arrow towers as you can
+[Level challenge strategy] get familiar with tower planting, plant as many arrow towers as you can

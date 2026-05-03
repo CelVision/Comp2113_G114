@@ -82,12 +82,12 @@ Render Section: Rows 1-27 (playable area)
 UI Sections: Rows 28-33 (tower selection)
 
 File Organization:
-- Maps/map_for_levelX.txt: Level map package files, X is the 1-based level index
-- level design/levelX_design.txt: Wave spawn package files, X is the same 1-based level index
-- towers.txt: ASCII art for tower display
-- mobs.txt: Mob descriptions and stats
-- TowerData.txt: Complete tower specifications
-- MobData.txt: Complete mob specifications
+- data/maps/map_for_levelX.txt: Level map package files, X is the 1-based level index
+- data/levels/levelX_design.txt: Wave spawn package files, X is the same 1-based level index
+- docs/towers.txt: ASCII art for tower display
+- docs/mobs.txt: Mob descriptions and stats
+- data/meta/TowerData.txt: Complete tower specifications
+- data/meta/MobData.txt: Complete mob specifications
 - GameData.h: C++ data structures
 - GameMap.cpp: Game logic and rendering
 - Game.cpp: Main game loop and UI

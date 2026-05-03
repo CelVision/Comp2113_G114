@@ -4,9 +4,11 @@
 #include <set>
 #include <iomanip>
 #include <cstdlib>
+#include <chrono>
 #include <conio.h>
 #include <windows.h>
 #include "GameData.h"
+#include "MobSystem.h"
 
 // Note: GameMap.cpp is included as a header-like implementation file
 #include "GameMap.cpp"
@@ -14,7 +16,7 @@
 using namespace std;
 
 // Constants
-const int MAP_COLS = 99;
+const int MAP_COLS = 147;
 const int LEVEL_COLS = 5;
 const int LEVEL_ROWS = 2;
 
@@ -48,6 +50,19 @@ void showCursor(bool show) {
     GetConsoleCursorInfo(hConsole, &cursorInfo);
     cursorInfo.bVisible = show;
     SetConsoleCursorInfo(hConsole, &cursorInfo);
+}
+
+// Function to set console window size to fit the game map
+void setConsoleSize() {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    
+    // Set buffer size to accommodate map (147 columns + margin, 33 rows + UI)
+    COORD bufferSize = {158, 50};
+    SetConsoleScreenBufferSize(hConsole, bufferSize);
+    
+    // Set window size (slightly smaller than buffer to show scrollbars if needed)
+    SMALL_RECT windowRect = {0, 0, 157, 49};  // 158x50 window (0-indexed, so 157x49)
+    SetConsoleWindowInfo(hConsole, TRUE, &windowRect);
 }
 
 // Helper: Check which towers overlap with 3x3 selection
@@ -264,6 +279,8 @@ void displayGameScreen(string playerName, int levelSelected) {
     // Load map from file for the selected level
     mapManager.loadMapFromFile(levelSelected);
     
+    // Note: mob system will be initialized after basic player state (money, HP)
+    
     // Tower placement mode
     int selRow = 16;  // Start at middle
     int selCol = 50;
@@ -272,6 +289,11 @@ void displayGameScreen(string playerName, int levelSelected) {
     int flashCounter = 0;
     int money = 10000;
     int baseHP = 10;
+
+    // Initialize mob system (needs money/baseHP refs)
+    MobSystemManager mobSystem(mapManager.getAllMobs(), mapManager.getGameMap(), money, baseHP);
+    mobSystem.findGlobalPath();
+    mobSystem.loadLevelDesign(levelSelected);
     
     bool placingTowers = true;
     
@@ -287,19 +309,39 @@ void displayGameScreen(string playerName, int levelSelected) {
     setCursorPosition(0, 0);
     cout << "\n";
     cout << string(20, '=') << " BYTE RUSH - Level " << levelSelected << " " << string(20, '=') << endl;
-    cout << "Player: " << playerName << " | Money: $" << money << " | HP: " << baseHP << "/10" << endl;
+        // Wave info: remaining/total for current wave
+        int waveRemaining = mobSystem.getRemainingInCurrentWave();
+        int waveTotal = mobSystem.getTotalSpawnsCurrentWave();
+        cout << "Player: " << playerName << " | Money: $" << money << " | HP: " << baseHP << "/10"
+            << " | wave: " << waveRemaining << "/" << waveTotal << endl;
     cout << string(75, '=') << endl;
     cout << "\n";
     int mapStartLine = 5;  // Line where map starts
     
+    auto lastFrameTime = chrono::steady_clock::now();
+    
     while (placingTowers) {
+        // Use real elapsed time so speed value means tiles per second.
+        auto now = chrono::steady_clock::now();
+        double frameTime = chrono::duration<double>(now - lastFrameTime).count();
+        lastFrameTime = now;
+
+        // Clamp to avoid giant jumps after pauses.
+        if (frameTime < 0.0) frameTime = 0.0;
+        if (frameTime > 0.1) frameTime = 0.1;
+
+        mobSystem.update(frameTime);
+        
         // Update flash effect
         flashCounter++;
         showFlash = (flashCounter / 20) % 2 == 0;  // Flash every 20 frames (slower)
         
-        // Update header info
-        setCursorPosition(0, 1);
-        cout << "Player: " << playerName << " | Money: $" << setfill(' ') << setw(5) << money << " | HP: " << baseHP << "/10   ";
+           // Update header info (also show current wave remaining/total)
+           setCursorPosition(0, 1);
+           int waveRemaining = mobSystem.getRemainingInCurrentWave();
+           int waveTotal = mobSystem.getTotalSpawnsCurrentWave();
+           cout << "Player: " << playerName << " | Money: $" << setfill(' ') << setw(5) << money 
+               << " | HP: " << baseHP << "/10" << " | wave: " << waveRemaining << "/" << waveTotal << "   ";
         
         // Render game map with selection bracket at fixed position
         setCursorPosition(0, mapStartLine);
@@ -307,6 +349,7 @@ void displayGameScreen(string playerName, int levelSelected) {
         // Get map and towers references
         GameMap& gameMap = mapManager.getGameMap();
         vector<Tower>& towers = mapManager.getAllTowers();
+        const vector<NavigationRoute>& routes = mobSystem.getNavigationRoutes();
         
         // Save current position for later restoration
         int currentMapLine = mapStartLine;
@@ -359,6 +402,21 @@ void displayGameScreen(string playerName, int levelSelected) {
                     }
                 } else {
                     // Normal rendering
+                    bool isCheckpoint = false;
+                    for (const auto& route : routes) {
+                        if (route.checkpoint.first == i && route.checkpoint.second == j) {
+                            isCheckpoint = true;
+                            break;
+                        }
+                    }
+
+                    if (isCheckpoint && tile.type == PATH) {
+                        setTextColor(COLOR_GREEN);
+                        cout << 'C';
+                        resetTextColor();
+                        continue;
+                    }
+
                     switch (tile.type) {
                         case PATH:
                             setTextColor(COLOR_YELLOW);
@@ -388,13 +446,17 @@ void displayGameScreen(string playerName, int levelSelected) {
             }
         }
         
+        // Render mobs on top of the map
+        mobSystem.renderMobs(mapStartLine);
+        
         // Display info at bottom
         int infoLine = mapStartLine + GameMap::ROWS;
         setCursorPosition(0, infoLine);
         cout << string(75, '=') << endl;
         
         setCursorPosition(0, infoLine + 1);
-        cout << "Arrow Keys: Move | 1-9: Tower | Enter: Plant/Sell | Q: Exit                     ";
+        cout << "Arrow Keys: Move | 1-9: Tower | Enter: Plant/Sell | Q: Exit    Mobs: " 
+             << mobSystem.getActiveMobCount() << "              ";
         
         // Check for overlapping towers
         vector<int> overlapping = getOverlappingTowers(gameMap, selRow, selCol);
@@ -566,6 +628,9 @@ int main() {
     
     // Set console title
     system("title BYTE RUSH - Tower Defense Game");
+    
+    // Set console window and buffer size to fit the game map
+    setConsoleSize();
     
     gameLoop();
     

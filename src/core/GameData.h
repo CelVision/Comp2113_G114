@@ -69,7 +69,7 @@ struct Tile {
 
 struct GameMap {
     static const int ROWS = 33;
-    static const int COLS = 99;
+    static const int COLS = 147;
     
     Tile grid[ROWS][COLS];
     vector<pair<int, int>> pathCoordinates;  // Path route for mobs to follow
@@ -101,15 +101,19 @@ struct GameState {
 // ============ RESOURCE PATH HELPERS ============
 
 inline string buildMapFilePath(int level) {
-    return string("Maps/map_for_level") + to_string(level) + ".txt";
+    return string("data/maps/map_for_level") + to_string(level) + ".txt";
 }
 
 inline string buildLevelDesignPath(int level) {
-    return string("level design/level") + to_string(level) + "_design.txt";
+    return string("data/levels/level") + to_string(level) + "_design.txt";
 }
 
 inline string buildMobDataPath() {
-    return string("MobData.txt");
+    return string("data/meta/MobData.txt");
+}
+
+inline string buildTowerDataPath() {
+    return string("data/meta/TowerData.txt");
 }
 
 #endif // GAMEDATA_H
