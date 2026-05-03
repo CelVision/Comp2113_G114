@@ -1,16 +1,81 @@
 # Comp2113_G114
 Comp2113 group work
 
-Team Members
+## Team Members
 
 Liu Guren  
 Zhou Yuzhou  
 Shen Ziheng  
 Ma Taoran  
 
-Basic Information of Our Game
+## Basic Information of Our Game
 
 This is a tower defense game where players can accumulate currency to build defensive structures and fend off enemy attacks. There are a total of ten selectable levels, with level 10 serving as the endless mode where you can use all the unlocked buildings. Enemy attacks will become increasingly intense until they overwhelm the player. After being defeated, your score will be calculated, so aim for a higher ranking on the leaderboard. Enjoy the game!
+
+## Implemented Features
+
+The game implements several key features to provide an engaging tower defense experience:
+
+1. **Tower Placement System**: Players can place various types of towers on buildable areas to defend against enemies.
+2. **Enemy Wave System**: Enemies spawn in waves with increasing difficulty across levels.
+3. **Combat Mechanics**: Towers automatically attack enemies within range, with different tower types having unique abilities.
+4. **Resource Management**: Players earn currency by defeating enemies and use it to build towers.
+5. **Level Progression**: 10 levels with escalating difficulty, including an endless mode.
+6. **User Interface**: Console-based UI for level selection, game display, and tower placement.
+
+### How Coding Elements Support the Features
+
+1. **Generation of random events**: Used in enemy spawning and wave generation to create unpredictable gameplay. For example, random enemy types and timings in waves keep the game challenging and replayable.
+
+2. **Data structures for storing data**: Structs like `Tower`, `Mob`, and `GameMap` store game data efficiently. Vectors are used for dynamic arrays of towers, mobs, and map tiles, supporting the tower placement and enemy management features.
+
+3. **Dynamic memory management**: Vectors and other containers handle dynamic allocation of game objects like towers and enemies, allowing the game to scale with different levels and player actions.
+
+4. **File input/output (e.g., for loading/saving data)**: The game loads level maps, enemy data, and tower configurations from text files in the `data/` directory, enabling easy content updates and supporting the multiple difficulty levels feature.
+
+5. **Program codes in multiple files**: The codebase is organized into multiple files (`Game.cpp`, `GameData.h`, `GameMap.cpp`, `MobSystem.h`, `UI.cpp`), promoting modularity and maintainability, which supports all features by separating concerns like game logic, data structures, and UI.
+
+6. **Multiple Difficulty Levels**: The game offers 10 selectable levels with increasing complexity, allowing players to choose their preferred challenge level. This is supported by file-based level data and progressive enemy scaling.
+
+## Non-Standard C/C++ Libraries
+
+The project uses the following non-standard C/C++ libraries:
+
+- `<conio.h>`: Used for console input/output functions like `getch()` for user input handling in the UI.
+- `<windows.h>`: Used for Windows-specific console manipulation functions like `SetConsoleCursorPosition()` and `GetStdHandle()` to control cursor position and screen clearing, supporting the game's console-based interface.
+
+These libraries enable the console UI features, allowing for real-time game display and user interaction.
+
+## Compilation and Execution Instructions
+
+### Prerequisites
+- Windows operating system
+- g++ compiler (MinGW or similar)
+
+### Compilation
+1. Open a terminal in the project root directory.
+2. Run the following command to compile:
+   ```
+   make
+   ```
+   Or manually:
+   ```
+   g++ -std=c++11 -Wall src/core/Game.cpp -o Game.exe
+   ```
+
+### Execution
+1. After compilation, run the game:
+   ```
+   .\Game.exe
+   ```
+2. Follow the on-screen prompts to enter your name and select a level.
+3. Use the game controls to place towers and defend against enemies.
+
+### Quick Start
+- Select a level from 1-10.
+- Use arrow keys to navigate the tower selection menu.
+- Place towers on buildable areas (marked with '.') to defend the base camp ('M').
+- Survive waves of enemies to progress and earn a high score.
 
 Resource Packages
 
