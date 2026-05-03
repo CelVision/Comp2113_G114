@@ -57,18 +57,23 @@ struct MobInstance {
     bool passedCheckpoint;
     int checkpointIndex;
     bool reachedBase;
+    double lastHitTime;
     
     MobModifier modifier; // Dynamic modifiers for this mob
     int baseGold;         // Base gold reward before multiplier
     int spawnPointRow;    // Original spawn row
     int spawnPointCol;    // Original spawn column
+    int prevRenderRow;    // Last rendered integer row
+    int prevRenderCol;    // Last rendered integer col
+    int lastGridRow;      // Last integer grid row tracked by logic update
+    int lastGridCol;      // Last integer grid col tracked by logic update
 
     MobInstance(int type, double row, double col, double speed, int wave)
             : mobType(type), posRow(row), posCol(col), targetWaypoint(0), 
                 isAlive(true), lastUpdateTime(0), spawnWaveId(wave), moveSpeed(speed),
                 modifiedSpeed(speed), routeIndex(-1), routeStepIndex(0), 
                 passedCheckpoint(false), checkpointIndex(-1), reachedBase(false),
-                spawnPointRow((int)row), spawnPointCol((int)col), baseGold(0), maxHealth(0) {
+                lastHitTime(-9999.0), spawnPointRow((int)row), spawnPointCol((int)col), prevRenderRow((int)row), prevRenderCol((int)col), lastGridRow((int)row), lastGridCol((int)col), baseGold(0), maxHealth(0) {
             velocityRow = 0;
             velocityCol = 0;
     }
@@ -108,6 +113,9 @@ private:
     vector<LevelWave> waves;
     vector<pair<int, int>> globalPath; // Path from spawn to base for all mobs
     vector<NavigationRoute> navigationRoutes;
+    unordered_map<long long, double> towerNextAttackTime;
+    vector<pair<int, int>> towerDashFlashQueue;
+    bool demoRenderDirty;
     
     int currentWaveIndex;
     double currentWaveTime;
@@ -116,6 +124,9 @@ private:
     vector<Mob>& mobTypes;
     GameMap& gameMap;
     vector<int> mobGolds;
+    bool useDemoAlgorithm;
+    bool demoManualWaveActive;
+    bool demoWaitingForNextWave;
     
 public:
         // Accept references to player's money and base HP so mob system can
@@ -123,18 +134,26 @@ public:
         int &moneyRef;
         int &baseHPRef;
 
-        MobSystemManager(vector<Mob>& mobTypes_, GameMap& gameMap_, int &money_, int &baseHP_) 
-                : mobTypes(mobTypes_), gameMap(gameMap_), currentWaveIndex(0), 
-                    currentWaveTime(0), gameTime(0), moneyRef(money_), baseHPRef(baseHP_) {
+        MobSystemManager(vector<Mob>& mobTypes_, GameMap& gameMap_, int &money_, int &baseHP_, bool demoMode = false) 
+            : mobTypes(mobTypes_), gameMap(gameMap_), currentWaveIndex(0), 
+                currentWaveTime(0), gameTime(0), moneyRef(money_), baseHPRef(baseHP_),
+                    useDemoAlgorithm(demoMode), demoManualWaveActive(false), demoWaitingForNextWave(false), demoRenderDirty(true) {
                 loadMobGolds();
+                if (useDemoAlgorithm) demoWaitingForNextWave = true;
         }
     
     // Load level design from file (e.g., "data/levels/level1_design.txt")
     void loadLevelDesign(int level) {
         waves.clear();
-        navigationRoutes.clear();
         currentWaveTime = 0;
         gameTime = 0;
+
+        if (useDemoAlgorithm) {
+            loadDemoLevelDesign(level);
+            return;
+        }
+
+        navigationRoutes.clear();
         string filename = buildLevelDesignPath(level);
         ifstream file(filename);
         
@@ -216,6 +235,120 @@ public:
         }
         
         file.close();
+    }
+
+    void loadDemoLevelDesign(int level) {
+        waves.clear();
+        if (mobTypes.empty()) return;
+
+        // Demo is only defined for level 1.
+        if (level != 1) {
+            return;
+        }
+
+        globalPath.clear();
+
+        // Build a fixed demo route: go right 140, go down 19, go left 111
+        // Start at spawn column 0 (left side) at the spawn row
+        // Ensure route stays within map bounds
+        int maxCol = GameMap::COLS - 1;
+        int maxRow = GameMap::ROWS - 1;
+
+        int spawnRow = 1;
+
+        // Build route nodes for demo spawn row
+        vector<pair<int,int>> nodes;
+        int r = spawnRow;
+        int c = findSpawnColumnForRow(spawnRow) + 1;
+        if (c < 0) c = 0;
+        if (c > maxCol) c = maxCol;
+        nodes.push_back({r, c});
+
+        // go right 140 units
+        for (int step = 1; step <= 140; ++step) {
+            int nc = c + step;
+            if (nc > maxCol) break;
+            nodes.push_back({r, nc});
+        }
+
+        pair<int,int> last = nodes.back();
+        int curRow = last.first;
+        int curCol = last.second;
+
+        // go down 19 units
+        for (int step = 1; step <= 19; ++step) {
+            int nr = curRow + step;
+            if (nr > maxRow) break;
+            nodes.push_back({nr, curCol});
+        }
+
+        last = nodes.back();
+        curRow = last.first;
+        curCol = last.second;
+
+        // go left 111 units
+        for (int step = 1; step <= 111; ++step) {
+            int nc = curCol - step;
+            if (nc < 0) break;
+            nodes.push_back({curRow, nc});
+        }
+
+        globalPath = nodes;
+
+        // Demo wave plan: 4 waves with fixed pigman counts.
+        const int waveCounts[4] = {5, 8, 10, 20};
+        const double spawnGap = 0.7;
+
+        for (int w = 0; w < 4; ++w) {
+            LevelWave wave;
+            wave.waveNumber = w + 1;
+            wave.totalDuration = 0.0;
+
+            for (int i = 0; i < waveCounts[w]; ++i) {
+                SpawnEvent ev;
+                ev.spawnTime = i * spawnGap;
+                ev.mobType = 0; // Pigman only in demo
+                ev.spawnRow = spawnRow;
+                ev.spawnCol = c;
+                ev.speed = 2.0;
+                ev.routeIndex = -1;
+                wave.spawnEvents.push_back(ev);
+                wave.totalDuration = ev.spawnTime;
+            }
+
+            // Small buffer to ensure final spawn is processed.
+            wave.totalDuration += 0.2;
+            waves.push_back(wave);
+        }
+    }
+
+    // Manual demo control
+    void triggerNextWave() {
+        if (!useDemoAlgorithm) return;
+        if (currentWaveIndex >= (int)waves.size()) return;
+        if (demoManualWaveActive) return;
+        if (!activeMobs.empty()) return;
+        demoManualWaveActive = true;
+        demoWaitingForNextWave = false;
+        demoRenderDirty = true;
+        currentWaveTime = 0;
+    }
+
+    bool isWaitingForNextWave() const {
+        if (!useDemoAlgorithm) return false;
+        if (currentWaveIndex >= (int)waves.size()) return false;
+        return demoWaitingForNextWave;
+    }
+
+    bool allWavesSpawned() const {
+        return currentWaveIndex >= (int)waves.size();
+    }
+
+    bool consumeDemoRenderDirty() {
+        if (!useDemoAlgorithm) return true;
+        bool dirty = demoRenderDirty;
+        demoRenderDirty = false;
+        return dirty;
     }
 
     // Parse data/meta/MobData.txt to extract gold rewards per mob name
@@ -413,71 +546,210 @@ public:
 
         return commands;
     }
+
+    long long makeTowerKey(int row, int col) const {
+        return (static_cast<long long>(row) << 32) ^ static_cast<unsigned int>(col);
+    }
+
+    vector<pair<int, int>> getPlacedTowerCenters() const {
+        vector<pair<int, int>> centers;
+        for (int row = 0; row < GameMap::ROWS; ++row) {
+            for (int col = 0; col < GameMap::COLS; ++col) {
+                const Tile& tile = gameMap.grid[row][col];
+                if (tile.type == TOWER && tile.towerIndex >= 0 && tile.towerPosRow == 1 && tile.towerPosCol == 1) {
+                    centers.push_back(make_pair(row, col));
+                }
+            }
+        }
+        return centers;
+    }
+
+    void processTowerAttacks(const vector<Tower>& towers) {
+        vector<pair<int, int>> towerCenters = getPlacedTowerCenters();
+
+        for (const auto& center : towerCenters) {
+            int centerRow = center.first;
+            int centerCol = center.second;
+            const Tile& centerTile = gameMap.grid[centerRow][centerCol];
+            int towerTypeIndex = centerTile.towerIndex;
+            if (towerTypeIndex < 0 || towerTypeIndex >= (int)towers.size()) continue;
+
+            const Tower& tower = towers[towerTypeIndex];
+            if (tower.name != "Arrow Tower") continue;
+
+            long long key = makeTowerKey(centerRow, centerCol);
+            double& nextAttackTime = towerNextAttackTime[key];
+            if (nextAttackTime > gameTime) continue;
+
+            int rangeRadius = 4; // 9x9 square centered on the tower
+            int damage = 100;
+
+            int bestMobIndex = -1;
+            double bestDist = 1e18;
+            for (int i = 0; i < (int)activeMobs.size(); ++i) {
+                MobInstance& mob = activeMobs[i];
+                if (!mob.isAlive) continue;
+                const string& mobName = mobTypes[mob.mobType].name;
+                if (mobName.find("Pigman") == string::npos && mobName.find("pigman") == string::npos) continue;
+
+                int mobRow = (int)round(mob.posRow);
+                int mobCol = (int)round(mob.posCol);
+                int rowDelta = mobRow - centerRow;
+                int colDelta = mobCol - centerCol;
+                if (abs(rowDelta) > rangeRadius || abs(colDelta) > rangeRadius) continue;
+
+                double distSq = (double)rowDelta * rowDelta + (double)colDelta * colDelta;
+                if (distSq < bestDist) {
+                    bestDist = distSq;
+                    bestMobIndex = i;
+                }
+            }
+
+            if (bestMobIndex >= 0) {
+                MobInstance& target = activeMobs[bestMobIndex];
+                target.lastHitTime = gameTime;
+                damageToMob(target, damage);
+                nextAttackTime = gameTime + tower.attackSpeed;
+
+                // Flash the '-' in "<->" once when this tower attacks.
+                int dashRow = centerRow - 1;
+                int dashCol = centerCol;
+                if (dashRow >= 0 && dashRow < GameMap::ROWS && dashCol >= 0 && dashCol < GameMap::COLS) {
+                    towerDashFlashQueue.push_back(make_pair(dashRow, dashCol));
+                }
+
+                demoRenderDirty = true;
+            }
+        }
+    }
     
     // Update all mobs each frame (dt = delta time in seconds)
-    void update(double dt) {
+    void update(double dt, const vector<Tower>& towers) {
         gameTime += dt;
-        currentWaveTime += dt;
+        if (!(useDemoAlgorithm && !demoManualWaveActive)) {
+            currentWaveTime += dt;
+        }
         
         // Spawn new mobs if current wave is active
         if (currentWaveIndex < (int)waves.size()) {
             LevelWave& wave = waves[currentWaveIndex];
-            
-            for (auto& event : wave.spawnEvents) {
-                if (event.spawnTime <= currentWaveTime && 
-                    event.spawnTime > currentWaveTime - dt) { // Spawned this frame
-                    
-                    MobInstance newMob(event.mobType, (double)event.spawnRow, 
-                                      (double)event.spawnCol, event.speed, currentWaveIndex);
-                    
-                    // Initialize stats from mob type data
-                    newMob.health = mobTypes[event.mobType].hp;
-                    newMob.maxHealth = mobTypes[event.mobType].hp;
-                    newMob.baseGold = mobGolds[event.mobType];
-                    newMob.modifiedSpeed = event.speed;
-                    
-                    // Initialize modifier (defaults to no modifications)
-                    newMob.modifier = MobModifier();
-                    
-                    // Set route and checkpoint info
-                    newMob.routeIndex = event.routeIndex;
-                    newMob.routeStepIndex = 0;
-                    newMob.passedCheckpoint = false;
-                    newMob.checkpointIndex = -1;
-                    newMob.spawnPointRow = event.spawnRow;
-                    newMob.spawnPointCol = event.spawnCol;
 
-                    const vector<pair<int, int>>* routeNodes = nullptr;
-                    if (newMob.routeIndex >= 0 && newMob.routeIndex < (int)navigationRoutes.size()) {
-                        routeNodes = &navigationRoutes[newMob.routeIndex].nodes;
-                        newMob.checkpointIndex = navigationRoutes[newMob.routeIndex].checkpointNodeIndex;
-                    } else if (!globalPath.empty()) {
-                        routeNodes = &globalPath;
-                    }
-                    
-                    // Update dynamic stats based on current game state
-                    updateMobDynamicStats(newMob, gameTime);
-                    
-                    // Set initial velocity towards first waypoint
-                    if (routeNodes != nullptr && routeNodes->size() >= 2) {
-                        double nextRow = (*routeNodes)[1].first;
-                        double nextCol = (*routeNodes)[1].second;
-                        double dist = sqrt(pow(nextRow - newMob.posRow, 2) + 
-                                         pow(nextCol - newMob.posCol, 2));
-                        if (dist > 0) {
-                            newMob.velocityRow = (nextRow - newMob.posRow) / dist * newMob.modifiedSpeed;
-                            newMob.velocityCol = (nextCol - newMob.posCol) / dist * newMob.modifiedSpeed;
+            if (useDemoAlgorithm) {
+                // In demo manual mode, only spawn when manual wave active
+                if (demoManualWaveActive) {
+                    for (auto& event : wave.spawnEvents) {
+                        if (event.spawnTime <= currentWaveTime && 
+                            event.spawnTime >= currentWaveTime - dt) {
+                            MobInstance newMob(event.mobType, (double)event.spawnRow, 
+                                              (double)event.spawnCol, event.speed, currentWaveIndex);
+
+                            newMob.health = mobTypes[event.mobType].hp;
+                            newMob.maxHealth = mobTypes[event.mobType].hp;
+                            newMob.baseGold = mobGolds[event.mobType];
+                            newMob.modifiedSpeed = event.speed;
+                            newMob.modifier = MobModifier();
+
+                            newMob.routeIndex = event.routeIndex;
+                            newMob.routeStepIndex = 0;
+                            newMob.passedCheckpoint = false;
+                            newMob.checkpointIndex = -1;
+                            newMob.spawnPointRow = event.spawnRow;
+                            newMob.spawnPointCol = event.spawnCol;
+
+                            const vector<pair<int, int>>* routeNodes = nullptr;
+                            if (newMob.routeIndex >= 0 && newMob.routeIndex < (int)navigationRoutes.size()) {
+                                routeNodes = &navigationRoutes[newMob.routeIndex].nodes;
+                                newMob.checkpointIndex = navigationRoutes[newMob.routeIndex].checkpointNodeIndex;
+                            } else if (!globalPath.empty()) {
+                                routeNodes = &globalPath;
+                            }
+
+                            updateMobDynamicStats(newMob, gameTime);
+
+                            if (routeNodes != nullptr && routeNodes->size() >= 2) {
+                                double nextRow = (*routeNodes)[1].first;
+                                double nextCol = (*routeNodes)[1].second;
+                                double dist = sqrt(pow(nextRow - newMob.posRow, 2) + 
+                                                 pow(nextCol - newMob.posCol, 2));
+                                if (dist > 0) {
+                                    newMob.velocityRow = (nextRow - newMob.posRow) / dist * newMob.modifiedSpeed;
+                                    newMob.velocityCol = (nextCol - newMob.posCol) / dist * newMob.modifiedSpeed;
+                                }
+                            }
+
+                            activeMobs.push_back(newMob);
                         }
                     }
-                    
-                    activeMobs.push_back(newMob);
+
+                    // Next wave can only become available after this wave finished spawning
+                    // and all mobs from this wave are cleared.
+                    if (currentWaveTime > wave.totalDuration && activeMobs.empty()) {
+                        demoManualWaveActive = false;
+                        demoWaitingForNextWave = true;
+                        currentWaveIndex++;
+                        currentWaveTime = 0;
+                        demoRenderDirty = true;
+                    }
                 }
-            }
-            
-            // Check if wave is complete
-            if (currentWaveTime > wave.totalDuration) {
-                currentWaveIndex++;
-                currentWaveTime = 0;
+            } else {
+                for (auto& event : wave.spawnEvents) {
+                    if (event.spawnTime <= currentWaveTime && 
+                        event.spawnTime >= currentWaveTime - dt) { // Spawned this frame
+
+                        MobInstance newMob(event.mobType, (double)event.spawnRow, 
+                                          (double)event.spawnCol, event.speed, currentWaveIndex);
+
+                        // Initialize stats from mob type data
+                        newMob.health = mobTypes[event.mobType].hp;
+                        newMob.maxHealth = mobTypes[event.mobType].hp;
+                        newMob.baseGold = mobGolds[event.mobType];
+                        newMob.modifiedSpeed = event.speed;
+
+                        // Initialize modifier (defaults to no modifications)
+                        newMob.modifier = MobModifier();
+
+                        // Set route and checkpoint info
+                        newMob.routeIndex = event.routeIndex;
+                        newMob.routeStepIndex = 0;
+                        newMob.passedCheckpoint = false;
+                        newMob.checkpointIndex = -1;
+                        newMob.spawnPointRow = event.spawnRow;
+                        newMob.spawnPointCol = event.spawnCol;
+
+                        const vector<pair<int, int>>* routeNodes = nullptr;
+                        if (newMob.routeIndex >= 0 && newMob.routeIndex < (int)navigationRoutes.size()) {
+                            routeNodes = &navigationRoutes[newMob.routeIndex].nodes;
+                            newMob.checkpointIndex = navigationRoutes[newMob.routeIndex].checkpointNodeIndex;
+                        } else if (!globalPath.empty()) {
+                            routeNodes = &globalPath;
+                        }
+
+                        // Update dynamic stats based on current game state
+                        updateMobDynamicStats(newMob, gameTime);
+
+                        // Set initial velocity towards first waypoint
+                        if (routeNodes != nullptr && routeNodes->size() >= 2) {
+                            double nextRow = (*routeNodes)[1].first;
+                            double nextCol = (*routeNodes)[1].second;
+                            double dist = sqrt(pow(nextRow - newMob.posRow, 2) + 
+                                             pow(nextCol - newMob.posCol, 2));
+                            if (dist > 0) {
+                                newMob.velocityRow = (nextRow - newMob.posRow) / dist * newMob.modifiedSpeed;
+                                newMob.velocityCol = (nextCol - newMob.posCol) / dist * newMob.modifiedSpeed;
+                            }
+                        }
+
+                        activeMobs.push_back(newMob);
+                        demoRenderDirty = true;
+                        demoRenderDirty = true;
+                    }
+                }
+
+                // Check if wave is complete
+                if (currentWaveTime > wave.totalDuration) {
+                    currentWaveIndex++;
+                    currentWaveTime = 0;
+                }
             }
         }
         
@@ -498,6 +770,14 @@ public:
             // Update position
             mob.posRow += mob.velocityRow * dt;
             mob.posCol += mob.velocityCol * dt;
+
+            int currentGridRow = (int)round(mob.posRow);
+            int currentGridCol = (int)round(mob.posCol);
+            if (currentGridRow != mob.lastGridRow || currentGridCol != mob.lastGridCol) {
+                mob.lastGridRow = currentGridRow;
+                mob.lastGridCol = currentGridCol;
+                demoRenderDirty = true;
+            }
             
             // Update waypoint if reached
             if (routeNodes != nullptr && mob.routeStepIndex < (int)routeNodes->size()) {
@@ -537,43 +817,49 @@ public:
         }
         
         // Keep mobs strictly on walkable tiles (PATH/BASE) by snapping any drift.
-        for (auto &mob : activeMobs) {
-            if (!mob.isAlive) continue;
+        // Demo mode uses smooth movement along the fixed route, so do not snap it back
+        // to the nearest node every frame or it will appear stuck at spawn.
+        if (!useDemoAlgorithm) {
+            for (auto &mob : activeMobs) {
+                if (!mob.isAlive) continue;
 
-            const vector<pair<int, int>>* routeNodes = nullptr;
-            if (mob.routeIndex >= 0 && mob.routeIndex < (int)navigationRoutes.size()) {
-                routeNodes = &navigationRoutes[mob.routeIndex].nodes;
-            } else {
-                routeNodes = &globalPath;
-            }
-
-            int r = (int)round(mob.posRow);
-            int c = (int)round(mob.posCol);
-            if (r < 0 || r >= GameMap::ROWS || c < 0 || c >= GameMap::COLS) continue;
-
-            if (!(gameMap.grid[r][c].type == PATH || gameMap.grid[r][c].type == BASE)) {
-                double bestDist = 1e9;
-                int bestR = -1, bestC = -1;
-
-                if (routeNodes != nullptr) {
-                    for (size_t i = 0; i < routeNodes->size(); i++) {
-                        int nr = (*routeNodes)[i].first;
-                        int nc = (*routeNodes)[i].second;
-                        double d = sqrt(pow((double)nr - mob.posRow, 2) + pow((double)nc - mob.posCol, 2));
-                        if (d < bestDist) {
-                            bestDist = d;
-                            bestR = nr;
-                            bestC = nc;
-                        }
-                    }
+                const vector<pair<int, int>>* routeNodes = nullptr;
+                if (mob.routeIndex >= 0 && mob.routeIndex < (int)navigationRoutes.size()) {
+                    routeNodes = &navigationRoutes[mob.routeIndex].nodes;
+                } else {
+                    routeNodes = &globalPath;
                 }
 
-                if (bestR != -1) {
-                    mob.posRow = (double)bestR;
-                    mob.posCol = (double)bestC;
+                int r = (int)round(mob.posRow);
+                int c = (int)round(mob.posCol);
+                if (r < 0 || r >= GameMap::ROWS || c < 0 || c >= GameMap::COLS) continue;
+
+                if (!(gameMap.grid[r][c].type == PATH || gameMap.grid[r][c].type == BASE)) {
+                    double bestDist = 1e9;
+                    int bestR = -1, bestC = -1;
+
+                    if (routeNodes != nullptr) {
+                        for (size_t i = 0; i < routeNodes->size(); i++) {
+                            int nr = (*routeNodes)[i].first;
+                            int nc = (*routeNodes)[i].second;
+                            double d = sqrt(pow((double)nr - mob.posRow, 2) + pow((double)nc - mob.posCol, 2));
+                            if (d < bestDist) {
+                                bestDist = d;
+                                bestR = nr;
+                                bestC = nc;
+                            }
+                        }
+                    }
+
+                    if (bestR != -1) {
+                        mob.posRow = (double)bestR;
+                        mob.posCol = (double)bestC;
+                    }
                 }
             }
         }
+
+        processTowerAttacks(towers);
         
         // Handle removal of dead mobs and award gold for killed mobs
         vector<MobInstance> survivors;
@@ -589,32 +875,127 @@ public:
                     int goldReward = getMobReward(m);
                     moneyRef += goldReward;
                 }
+                demoRenderDirty = true;
             }
         }
 
         activeMobs.swap(survivors);
     }
+
+    void renderAttackFlashes(int mapStartLine) {
+        for (const auto &cell : towerDashFlashQueue) {
+            int row = cell.first;
+            int col = cell.second;
+            if (row < 0 || row >= GameMap::ROWS || col < 0 || col >= GameMap::COLS) continue;
+
+            setCursorPosition(col, mapStartLine + row);
+            setTextColor(14); // Bright yellow shine
+            cout << '-';
+            resetTextColor();
+        }
+        towerDashFlashQueue.clear();
+    }
     
     // Render mobs on game map
-    void renderMobs(int mapStartLine) {
+    void renderMobs(int mapStartLine, bool mapWasRedrawn = true) {
+        // First, compute all current integer positions occupied by mobs
+        vector<pair<int,int>> currentPositions;
+        currentPositions.reserve(activeMobs.size());
+        for (auto &mob : activeMobs) {
+            if (!mob.isAlive) continue;
+            int r = (int)round(mob.posRow);
+            int c = (int)round(mob.posCol);
+            if (r >= 0 && r < GameMap::ROWS && c >= 0 && c < GameMap::COLS) {
+                currentPositions.push_back({r,c});
+            }
+        }
+
+        // For each mob, if its previous render cell is no longer occupied, redraw background there.
+        for (auto &mob : activeMobs) {
+            if (!mob.isAlive) continue;
+            int prevR = mob.prevRenderRow;
+            int prevC = mob.prevRenderCol;
+            bool prevValid = (prevR >= 0 && prevR < GameMap::ROWS && prevC >= 0 && prevC < GameMap::COLS);
+            if (prevValid) {
+                bool stillOccupied = false;
+                for (auto &p : currentPositions) {
+                    if (p.first == prevR && p.second == prevC) { stillOccupied = true; break; }
+                }
+                if (!stillOccupied) {
+                    // Redraw the underlying tile at previous position
+                    Tile &t = gameMap.grid[prevR][prevC];
+                    setCursorPosition(prevC, mapStartLine + prevR);
+                    switch (t.type) {
+                        case PATH:
+                            setTextColor(14); // COLOR_YELLOW
+                            cout << t.displayChar;
+                            resetTextColor();
+                            break;
+                        case BUILDABLE:
+                            setTextColor(8); // COLOR_GRAY
+                            cout << t.displayChar;
+                            resetTextColor();
+                            break;
+                        case TOWER:
+                            setTextColor(15); // COLOR_WHITE
+                            cout << t.displayChar;
+                            resetTextColor();
+                            break;
+                        case BASE:
+                            setTextColor(12); // COLOR_RED
+                            cout << 'B';
+                            resetTextColor();
+                            break;
+                        case BLOCKED:
+                            cout << ' ';
+                            break;
+                        default:
+                            cout << t.displayChar;
+                            break;
+                    }
+                }
+            }
+        }
+
+        // Now draw mobs at their current positions and update prevRender fields
         for (auto& mob : activeMobs) {
             if (!mob.isAlive) continue;
-            
+
             int screenRow = (int)round(mob.posRow);
             int screenCol = (int)round(mob.posCol);
-            
+
             if (screenRow >= 0 && screenRow < GameMap::ROWS && 
                 screenCol >= 0 && screenCol < GameMap::COLS) {
-                
+
+                bool isPigman = false;
+                if (mob.mobType >= 0 && mob.mobType < (int)mobTypes.size()) {
+                    const string& mobName = mobTypes[mob.mobType].name;
+                    isPigman = (mobName.find("Pigman") != string::npos || mobName.find("pigman") != string::npos);
+                }
+
+                if (useDemoAlgorithm && isPigman && !mapWasRedrawn &&
+                    screenRow == mob.prevRenderRow && screenCol == mob.prevRenderCol) {
+                    continue;
+                }
+
                 setCursorPosition(screenCol, mapStartLine + screenRow);
-                
-                // Set mob color (CYAN = 11)
                 setTextColor(11);
-                
+
                 char mobChar = mobTypes[mob.mobType].symbol;
+                if (gameTime - mob.lastHitTime < 0.18) {
+                    setTextColor(12);
+                }
+                if (useDemoAlgorithm) {
+                    const string& mobName = mobTypes[mob.mobType].name;
+                    if (mobName.find("Pigman") != string::npos || mobName.find("pigman") != string::npos) {
+                        mobChar = 'p';
+                    }
+                }
                 cout << mobChar;
-                
                 resetTextColor();
+
+                mob.prevRenderRow = screenRow;
+                mob.prevRenderCol = screenCol;
             }
         }
     }
