@@ -18,6 +18,26 @@ void setCursorPosition(int x, int y);
 void setTextColor(int color);
 void resetTextColor();
 
+// ============ MOB MODIFIER STRUCTURE (for dynamic stats management) ============
+
+struct MobModifier {
+    // Multiplicative and additive modifiers for mob stats
+    double speedMultiplier;      // 1.0 = no change, 0.5 = 50% slower, 2.0 = 2x faster
+    double hpMultiplier;         // 1.0 = no change, 2.0 = double HP
+    int armorBonus;              // Flat armor bonus (e.g., +50 armor)
+    double goldMultiplier;       // 1.0 = no change, 1.5 = 1.5x gold reward
+    double damageMultiplier;     // For mob's damage output to towers/base
+    int slowEffect;              // Additional slow percentage (stacks with existing)
+    double slowDuration;         // Override slow duration in seconds
+    bool isSlowed;               // Whether mob is currently slowed
+    double slowedUntilTime;      // Game time when slow expires
+    
+    MobModifier() 
+        : speedMultiplier(1.0), hpMultiplier(1.0), armorBonus(0), 
+          goldMultiplier(1.0), damageMultiplier(1.0), slowEffect(0), 
+          slowDuration(0), isSlowed(false), slowedUntilTime(0.0) {}
+};
+
 // ============ MOB INSTANCE STRUCTURE ============
 
 struct MobInstance {
@@ -25,25 +45,33 @@ struct MobInstance {
     double posRow, posCol; // Current floating-point position
     double velocityRow, velocityCol; // Velocity per frame
     int targetWaypoint;   // Current target waypoint in path
-    int health;           // Current health
+    int health;            // Current health
+    int maxHealth;         // Max health (base * hpMultiplier)
     bool isAlive;
     double lastUpdateTime;
     int spawnWaveId;      // Which wave this mob belongs to
-    double moveSpeed;     // tiles per second
+    double moveSpeed;     // tiles per second (base)
+    double modifiedSpeed; // tiles per second (after modifiers applied)
     int routeIndex;       // Cached route used by this mob
     int routeStepIndex;   // Next waypoint index in route
     bool passedCheckpoint;
     int checkpointIndex;
+    bool reachedBase;
     
-        bool reachedBase;
+    MobModifier modifier; // Dynamic modifiers for this mob
+    int baseGold;         // Base gold reward before multiplier
+    int spawnPointRow;    // Original spawn row
+    int spawnPointCol;    // Original spawn column
 
-        MobInstance(int type, double row, double col, double speed, int wave)
-                : mobType(type), posRow(row), posCol(col), targetWaypoint(0), 
-                    isAlive(true), lastUpdateTime(0), spawnWaveId(wave), moveSpeed(speed),
-                        routeIndex(-1), routeStepIndex(0), passedCheckpoint(false), checkpointIndex(-1), reachedBase(false) {
-                velocityRow = 0;
-                velocityCol = 0;
-        }
+    MobInstance(int type, double row, double col, double speed, int wave)
+            : mobType(type), posRow(row), posCol(col), targetWaypoint(0), 
+                isAlive(true), lastUpdateTime(0), spawnWaveId(wave), moveSpeed(speed),
+                modifiedSpeed(speed), routeIndex(-1), routeStepIndex(0), 
+                passedCheckpoint(false), checkpointIndex(-1), reachedBase(false),
+                spawnPointRow((int)row), spawnPointCol((int)col), baseGold(0), maxHealth(0) {
+            velocityRow = 0;
+            velocityCol = 0;
+    }
 };
 
 // ============ SPAWN EVENT & WAVE (Level Design) ============
@@ -401,11 +429,23 @@ public:
                     
                     MobInstance newMob(event.mobType, (double)event.spawnRow, 
                                       (double)event.spawnCol, event.speed, currentWaveIndex);
+                    
+                    // Initialize stats from mob type data
                     newMob.health = mobTypes[event.mobType].hp;
+                    newMob.maxHealth = mobTypes[event.mobType].hp;
+                    newMob.baseGold = mobGolds[event.mobType];
+                    newMob.modifiedSpeed = event.speed;
+                    
+                    // Initialize modifier (defaults to no modifications)
+                    newMob.modifier = MobModifier();
+                    
+                    // Set route and checkpoint info
                     newMob.routeIndex = event.routeIndex;
                     newMob.routeStepIndex = 0;
                     newMob.passedCheckpoint = false;
                     newMob.checkpointIndex = -1;
+                    newMob.spawnPointRow = event.spawnRow;
+                    newMob.spawnPointCol = event.spawnCol;
 
                     const vector<pair<int, int>>* routeNodes = nullptr;
                     if (newMob.routeIndex >= 0 && newMob.routeIndex < (int)navigationRoutes.size()) {
@@ -415,6 +455,9 @@ public:
                         routeNodes = &globalPath;
                     }
                     
+                    // Update dynamic stats based on current game state
+                    updateMobDynamicStats(newMob, gameTime);
+                    
                     // Set initial velocity towards first waypoint
                     if (routeNodes != nullptr && routeNodes->size() >= 2) {
                         double nextRow = (*routeNodes)[1].first;
@@ -422,8 +465,8 @@ public:
                         double dist = sqrt(pow(nextRow - newMob.posRow, 2) + 
                                          pow(nextCol - newMob.posCol, 2));
                         if (dist > 0) {
-                            newMob.velocityRow = (nextRow - newMob.posRow) / dist * newMob.moveSpeed;
-                            newMob.velocityCol = (nextCol - newMob.posCol) / dist * newMob.moveSpeed;
+                            newMob.velocityRow = (nextRow - newMob.posRow) / dist * newMob.modifiedSpeed;
+                            newMob.velocityCol = (nextCol - newMob.posCol) / dist * newMob.modifiedSpeed;
                         }
                     }
                     
@@ -441,6 +484,9 @@ public:
         // Update mob positions and handle collision avoidance
         for (auto& mob : activeMobs) {
             if (!mob.isAlive) continue;
+            
+            // Update dynamic stats each frame (handles slow effects, buffs, etc.)
+            updateMobDynamicStats(mob, gameTime);
 
             const vector<pair<int, int>>* routeNodes = nullptr;
             if (mob.routeIndex >= 0 && mob.routeIndex < (int)navigationRoutes.size()) {
@@ -466,14 +512,14 @@ public:
 
                     mob.routeStepIndex++;
                     
-                    // Update velocity to next waypoint
+                    // Update velocity to next waypoint using modified speed
                     if (mob.routeStepIndex < (int)routeNodes->size()) {
                         nextRow = (*routeNodes)[mob.routeStepIndex].first;
                         nextCol = (*routeNodes)[mob.routeStepIndex].second;
                         dist = sqrt(pow(nextRow - mob.posRow, 2) + pow(nextCol - mob.posCol, 2));
                         if (dist > 0) {
-                            mob.velocityRow = (nextRow - mob.posRow) / dist * mob.moveSpeed;
-                            mob.velocityCol = (nextCol - mob.posCol) / dist * mob.moveSpeed;
+                            mob.velocityRow = (nextRow - mob.posRow) / dist * mob.modifiedSpeed;
+                            mob.velocityCol = (nextCol - mob.posCol) / dist * mob.modifiedSpeed;
                         }
                     }
                 }
@@ -539,9 +585,9 @@ public:
             } else {
                 // If mob died due to reaching base, do not award gold
                 if (!m.reachedBase) {
-                    int g = 0;
-                    if (m.mobType >= 0 && m.mobType < (int)mobGolds.size()) g = mobGolds[m.mobType];
-                    moneyRef += g;
+                    // Award gold based on mob reward (includes modifications like goldMultiplier)
+                    int goldReward = getMobReward(m);
+                    moneyRef += goldReward;
                 }
             }
         }
@@ -589,6 +635,245 @@ public:
         for (const auto &m : activeMobs) if (m.spawnWaveId == currentWaveIndex && m.isAlive) remaining++;
         for (const auto &e : waves[currentWaveIndex].spawnEvents) if (e.spawnTime > currentWaveTime) remaining++;
         return remaining;
+    }
+
+    // ============ NEW FUNCTIONS FOR SPAWN DATA MANAGEMENT ============
+
+    // Load complete mob stats from MobData.txt (including HP, armor, speed, special effects)
+    void loadMobStatsFromFile() {
+        string filename = buildMobDataPath();
+        ifstream file(filename);
+        
+        if (!file.is_open()) {
+            cerr << "Warning: Could not load mob stats from " << filename << endl;
+            return;
+        }
+        
+        string line;
+        int currentMobIndex = -1;
+        
+        while (getline(file, line)) {
+            // Parse "Enemy N: MobName"
+            if (line.find("Enemy") == 0 && line.find(':') != string::npos) {
+                size_t colonPos = line.find(':');
+                string mobInfo = line.substr(colonPos + 1);
+                
+                // Extract mob index from "Enemy N:"
+                size_t spacePos = line.find(' ', 6);
+                if (spacePos != string::npos) {
+                    string numStr = line.substr(6, spacePos - 6);
+                    currentMobIndex = stoi(numStr) - 1; // Convert to 0-based index
+                }
+            }
+            
+            // Parse individual stats
+            if (currentMobIndex >= 0 && currentMobIndex < (int)mobTypes.size()) {
+                if (line.find("HP:") != string::npos) {
+                    size_t pos = line.find("HP:");
+                    string numStr = line.substr(pos + 3);
+                    while (!numStr.empty() && !isdigit(numStr[0])) numStr.erase(0, 1);
+                    if (!numStr.empty()) mobTypes[currentMobIndex].hp = stoi(numStr);
+                }
+                else if (line.find("Armor:") != string::npos) {
+                    size_t pos = line.find("Armor:");
+                    string numStr = line.substr(pos + 6);
+                    while (!numStr.empty() && !isdigit(numStr[0])) numStr.erase(0, 1);
+                    if (!numStr.empty()) mobTypes[currentMobIndex].armor = stoi(numStr);
+                }
+                else if (line.find("Speed:") != string::npos) {
+                    size_t pos = line.find("Speed:");
+                    string numStr = line.substr(pos + 6);
+                    while (!numStr.empty() && !isdigit(numStr[0]) && numStr[0] != '.') numStr.erase(0, 1);
+                    if (!numStr.empty()) mobTypes[currentMobIndex].speed = stod(numStr);
+                }
+                else if (line.find("Gold:") != string::npos) {
+                    size_t pos = line.find("Gold:");
+                    string numStr = line.substr(pos + 5);
+                    while (!numStr.empty() && !isdigit(numStr[0])) numStr.erase(0, 1);
+                    if (!numStr.empty()) mobGolds[currentMobIndex] = stoi(numStr);
+                }
+                else if (line.find("Flying:") != string::npos) {
+                    mobTypes[currentMobIndex].isFlying = (line.find("Yes") != string::npos);
+                }
+            }
+        }
+        
+        file.close();
+    }
+
+    // Parse a single spawn line from level design file
+    // Format: "X mob from row R [left/right/top/bottom side]"
+    // Returns: (count, mobType, spawnRow, spawnCol, -1 if parse failed)
+    void parseSpawnLine(const string& line, int& count, int& mobType, int& spawnRow, int& spawnCol) {
+        count = 0;
+        mobType = -1;
+        spawnRow = -1;
+        spawnCol = -1;
+        
+        // Extract count (first number)
+        size_t numPos = 0;
+        while (numPos < line.length() && !isdigit(line[numPos])) numPos++;
+        if (numPos < line.length()) {
+            size_t numEnd = numPos;
+            while (numEnd < line.length() && isdigit(line[numEnd])) numEnd++;
+            count = stoi(line.substr(numPos, numEnd - numPos));
+        }
+        
+        // Extract mob name and determine type
+        if (line.find("pigman") != string::npos && line.find("berserker") == string::npos) {
+            mobType = 0; // Pigman
+        } else if (line.find("houndling") != string::npos) {
+            mobType = 1; // Houndling
+        } else if (line.find("werewolf") != string::npos) {
+            mobType = 2; // Werewolf
+        } else if (line.find("mini mammon") != string::npos) {
+            mobType = 3; // Mini Mammon
+        } else if (line.find("armored mammon") != string::npos) {
+            mobType = 4; // Armored Mammon
+        } else if (line.find("birdman") != string::npos) {
+            mobType = 5; // Birdman
+        } else if (line.find("batman") != string::npos) {
+            mobType = 6; // Batman
+        } else if (line.find("berserker") != string::npos) {
+            mobType = 7; // Pigman Berserker
+        } else if (line.find("spiderman") != string::npos) {
+            mobType = 8; // Spiderman
+        } else if (line.find("alpha wolf") != string::npos) {
+            mobType = 9; // Alpha Wolf
+        } else if (line.find("dragon") != string::npos) {
+            // Determine which dragon type
+            if (line.find("type 1") != string::npos || line.find("^D^") != string::npos) {
+                mobType = 10; // Dragon Type 1
+            } else if (line.find("type 2") != string::npos) {
+                mobType = 11; // Dragon Type 2
+            } else if (line.find("type 3") != string::npos || line.find("!D!") != string::npos) {
+                mobType = 12; // Dragon Type 3
+            }
+        }
+        
+        // Extract spawn row/column
+        if (line.find("row") != string::npos) {
+            size_t rowPos = line.find("row");
+            numPos = rowPos + 3;
+            while (numPos < line.length() && !isdigit(line[numPos])) numPos++;
+            if (numPos < line.length()) {
+                size_t numEnd = numPos;
+                while (numEnd < line.length() && isdigit(line[numEnd])) numEnd++;
+                spawnRow = stoi(line.substr(numPos, numEnd - numPos));
+                // Determine column based on spawn side
+                spawnCol = (line.find("left") != string::npos) ? 1 : 
+                           (line.find("right") != string::npos) ? GameMap::COLS - 2 : 50;
+            }
+        } else if (line.find("column") != string::npos) {
+            size_t colPos = line.find("column");
+            numPos = colPos + 6;
+            while (numPos < line.length() && !isdigit(line[numPos])) numPos++;
+            if (numPos < line.length()) {
+                size_t numEnd = numPos;
+                while (numEnd < line.length() && isdigit(line[numEnd])) numEnd++;
+                spawnCol = stoi(line.substr(numPos, numEnd - numPos));
+                // Determine row based on spawn side
+                spawnRow = (line.find("top") != string::npos) ? 1 : 
+                           (line.find("down") != string::npos) ? GameMap::ROWS - 2 : 16;
+            }
+        }
+    }
+
+    // Apply a modifier to a mob (e.g., speed buff, HP debuff)
+    void applyMobModifier(MobInstance& mob, const MobModifier& modifier, double currentGameTime) {
+        // Apply multiplicative modifiers
+        mob.modifier.speedMultiplier *= modifier.speedMultiplier;
+        mob.modifier.hpMultiplier *= modifier.hpMultiplier;
+        mob.modifier.goldMultiplier *= modifier.goldMultiplier;
+        mob.modifier.damageMultiplier *= modifier.damageMultiplier;
+        
+        // Apply additive modifiers
+        mob.modifier.armorBonus += modifier.armorBonus;
+        mob.modifier.slowEffect += modifier.slowEffect;
+        
+        // Handle slow effect
+        if (modifier.isSlowed) {
+            mob.modifier.isSlowed = true;
+            mob.modifier.slowedUntilTime = currentGameTime + modifier.slowDuration;
+            if (modifier.slowDuration > 0) {
+                mob.modifier.slowDuration = modifier.slowDuration;
+            }
+        }
+        
+        // Recalculate effective stats
+        updateMobDynamicStats(mob, currentGameTime);
+    }
+
+    // Update mob's dynamic stats based on modifiers (call each frame or after applying modifiers)
+    void updateMobDynamicStats(MobInstance& mob, double currentGameTime) {
+        // Update modified speed based on slowdown effect
+        mob.modifiedSpeed = mob.moveSpeed * mob.modifier.speedMultiplier;
+        
+        // Apply slow effect if active
+        if (mob.modifier.isSlowed && currentGameTime < mob.modifier.slowedUntilTime) {
+            double slowPercent = mob.modifier.slowEffect / 100.0;
+            mob.modifiedSpeed *= (1.0 - slowPercent);
+        } else if (mob.modifier.isSlowed && currentGameTime >= mob.modifier.slowedUntilTime) {
+            // Slow effect expired
+            mob.modifier.isSlowed = false;
+            mob.modifier.slowEffect = 0;
+        }
+        
+        // Ensure non-negative speed
+        if (mob.modifiedSpeed < 0.1) mob.modifiedSpeed = 0.1;
+        
+        // Calculate effective HP
+        if (mobTypes[mob.mobType].hp > 0) {
+            mob.maxHealth = (int)(mobTypes[mob.mobType].hp * mob.modifier.hpMultiplier);
+            // Ensure health doesn't exceed max
+            if (mob.health > mob.maxHealth) {
+                mob.health = mob.maxHealth;
+            }
+        }
+        
+        // Store base gold for reward calculation
+        if (mobGolds[mob.mobType] > 0) {
+            mob.baseGold = (int)(mobGolds[mob.mobType] * mob.modifier.goldMultiplier);
+        }
+    }
+
+    // Remove all slow effects from a mob
+    void removeMobSlow(MobInstance& mob, double currentGameTime) {
+        mob.modifier.isSlowed = false;
+        mob.modifier.slowEffect = 0;
+        mob.modifier.slowedUntilTime = 0;
+        updateMobDynamicStats(mob, currentGameTime);
+    }
+
+    // Deal damage to a mob and update health
+    // Returns true if mob dies
+    bool damageToMob(MobInstance& mob, int damageAmount) {
+        mob.health -= damageAmount;
+        if (mob.health <= 0) {
+            mob.health = 0;
+            mob.isAlive = false;
+            return true;
+        }
+        return false;
+    }
+
+    // Heal a mob to a maximum
+    void healMob(MobInstance& mob, int healAmount) {
+        mob.health += healAmount;
+        if (mob.health > mob.maxHealth) {
+            mob.health = mob.maxHealth;
+        }
+    }
+
+    // Get the effective armor of a mob after modifiers
+    int getEffectiveMobArmor(const MobInstance& mob) const {
+        if (mob.mobType < 0 || mob.mobType >= (int)mobTypes.size()) return 0;
+        return mobTypes[mob.mobType].armor + mob.modifier.armorBonus;
+    }
+
+    // Get the gold reward for a mob
+    int getMobReward(const MobInstance& mob) const {
+        return mob.baseGold;
     }
 };
 
