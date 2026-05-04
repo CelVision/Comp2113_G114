@@ -113,11 +113,11 @@ bool isValidPlacementLocation(GameMap& gameMap, int selRow, int selCol) {
 }
 
 // Helper: Check whether a level is unlocked for the current player
-bool isLevelUnlockedForPlayer(int levelNum, const string& playerName) {
+bool isLevelUnlockedForPlayer(int levelNum, const string& playerName, int maxUnlockedLevel) {
     if (playerName == "test") {
         return true;
     }
-    return levelNum == 1;
+    return levelNum <= maxUnlockedLevel;
 }
 
 // Helper: Number of towers unlocked at a given level
@@ -214,7 +214,7 @@ string displayStartScreen() {
 }
 
 // Display level selection screen
-int displayLevelSelect(const string& playerName) {
+int displayLevelSelect(const string& playerName, int maxUnlockedLevel) {
     int selectedCol = 0;
     int selectedRow = 0;
     string statusMessage;
@@ -234,7 +234,7 @@ int displayLevelSelect(const string& playerName) {
             
             for (int col = 0; col < LEVEL_COLS; col++) {
                 int levelNum = row * LEVEL_COLS + col + 1;
-                bool unlocked = isLevelUnlockedForPlayer(levelNum, playerName);
+                bool unlocked = isLevelUnlockedForPlayer(levelNum, playerName, maxUnlockedLevel);
                 
                 if (selectedRow == row && selectedCol == col) {
                     setTextColor(COLOR_GREEN);
@@ -250,7 +250,7 @@ int displayLevelSelect(const string& playerName) {
             
             for (int col = 0; col < LEVEL_COLS; col++) {
                 int levelNum = row * LEVEL_COLS + col + 1;
-                bool unlocked = isLevelUnlockedForPlayer(levelNum, playerName);
+                bool unlocked = isLevelUnlockedForPlayer(levelNum, playerName, maxUnlockedLevel);
                 
                 if (selectedRow == row && selectedCol == col) {
                     setTextColor(COLOR_GREEN);
@@ -272,7 +272,7 @@ int displayLevelSelect(const string& playerName) {
             
             for (int col = 0; col < LEVEL_COLS; col++) {
                 int levelNum = row * LEVEL_COLS + col + 1;
-                bool unlocked = isLevelUnlockedForPlayer(levelNum, playerName);
+                bool unlocked = isLevelUnlockedForPlayer(levelNum, playerName, maxUnlockedLevel);
                 
                 if (selectedRow == row && selectedCol == col) {
                     setTextColor(COLOR_GREEN);
@@ -310,7 +310,7 @@ int displayLevelSelect(const string& playerName) {
         int key = _getch();
         
         if (key == 13) { // Enter key
-            if (isLevelUnlockedForPlayer(selectedLevel, playerName)) {
+            if (isLevelUnlockedForPlayer(selectedLevel, playerName, maxUnlockedLevel)) {
                 return selectedLevel;
             }
             statusMessage = "Level " + to_string(selectedLevel) + " is locked. Clear level 1 first.";
@@ -339,7 +339,7 @@ int displayLevelSelect(const string& playerName) {
 }
 
 // Display game screen with interactive tower placement
-void displayGameScreen(string playerName, int levelSelected) {
+bool displayGameScreen(string playerName, int levelSelected) {
     clearScreen();
     
     // Initialize game map manager
@@ -360,17 +360,31 @@ void displayGameScreen(string playerName, int levelSelected) {
     int previewTowerIndex = -1;
     bool showFlash = false;
     int flashCounter = 0;
-    int money = 10000;
+    bool demoMode = (playerName == "demo");
+    int money = demoMode ? 500 : 10000;
     int baseHP = 10;
 
     // Initialize mob system (needs money/baseHP refs)
-    MobSystemManager mobSystem(mapManager.getAllMobs(), mapManager.getGameMap(), money, baseHP);
+    MobSystemManager mobSystem(mapManager.getAllMobs(), mapManager.getGameMap(), money, baseHP, demoMode);
     mobSystem.findGlobalPath();
     mobSystem.loadLevelDesign(levelSelected);
+
+    if (demoMode && levelSelected == 1) {
+        const vector<pair<int, int>> demoTowerSpots = {
+            {5, 10}, {5, 20}, {5, 30}, {5, 40}
+        };
+        for (const auto& spot : demoTowerSpots) {
+            if (mapManager.canPlaceTower(spot.first, spot.second, 0)) {
+                mapManager.placeTowerAt(spot.first, spot.second, 0);
+                break;
+            }
+        }
+    }
+
     int unlockedTowerCount = getUnlockedTowerCountForLevel(levelSelected, (int)mapManager.getAllTowers().size());
     
     bool placingTowers = true;
-    
+
     // Tower sell system variables
     int sellModeState = 0;  // 0: no sell, 1: showing price, 2: confirmed
     int sellTowerIndex = -1;
@@ -408,7 +422,10 @@ void displayGameScreen(string playerName, int levelSelected) {
         if (frameTime < 0.0) frameTime = 0.0;
         if (frameTime > 0.1) frameTime = 0.1;
 
-        mobSystem.update(frameTime);
+        GameMap& gameMap = mapManager.getGameMap();
+        vector<Tower>& towers = mapManager.getAllTowers();
+
+        mobSystem.update(frameTime, towers);
         
         // Update error message timer
         if (errorMessageDuration > 0) {
@@ -418,6 +435,11 @@ void displayGameScreen(string playerName, int levelSelected) {
         // Update flash effect
         flashCounter++;
         showFlash = (flashCounter / 20) % 2 == 0;  // Flash every 20 frames (slower)
+
+        bool redrawMapThisFrame = true;
+        if (demoMode) {
+            redrawMapThisFrame = mobSystem.consumeDemoRenderDirty();
+        }
         
            // Update header info (also show current wave remaining/total)
            setCursorPosition(0, 1);
@@ -426,19 +448,17 @@ void displayGameScreen(string playerName, int levelSelected) {
            cout << "Player: " << playerName << " | Money: $" << setfill(' ') << setw(5) << money 
                << " | HP: " << baseHP << "/10" << " | wave: " << waveRemaining << "/" << waveTotal << "   ";
         
-        // Render game map with selection bracket at fixed position
-        setCursorPosition(0, mapStartLine);
+        if (redrawMapThisFrame) {
+            // Render game map with selection bracket at fixed position
+            setCursorPosition(0, mapStartLine);
         
-        // Get map and towers references
-        GameMap& gameMap = mapManager.getGameMap();
-        vector<Tower>& towers = mapManager.getAllTowers();
         const vector<NavigationRoute>& routes = mobSystem.getNavigationRoutes();
         
-        // Save current position for later restoration
-        int currentMapLine = mapStartLine;
-        for (int i = 0; i < GameMap::ROWS; i++) {
-            setCursorPosition(0, currentMapLine + i);
-            for (int j = 0; j < GameMap::COLS; j++) {
+            // Save current position for later restoration
+            int currentMapLine = mapStartLine;
+            for (int i = 0; i < GameMap::ROWS; i++) {
+                setCursorPosition(0, currentMapLine + i);
+                for (int j = 0; j < GameMap::COLS; j++) {
                 Tile& tile = gameMap.grid[i][j];
                 
                 // Check if in placement area (3x3 area)
@@ -536,11 +556,13 @@ void displayGameScreen(string playerName, int levelSelected) {
                             break;
                     }
                 }
+                }
             }
         }
         
         // Render mobs on top of the map
-        mobSystem.renderMobs(mapStartLine);
+        mobSystem.renderMobs(mapStartLine, redrawMapThisFrame);
+        mobSystem.renderAttackFlashes(mapStartLine);
         
         // Display info at bottom
         int infoLine = mapStartLine + GameMap::ROWS;
@@ -687,10 +709,57 @@ void displayGameScreen(string playerName, int levelSelected) {
                 previewTowerIndex = -1;
                 sellModeState = 0;
             }
+            else if (key == 'z' || key == 'Z') {
+                if (demoMode) {
+                    mobSystem.triggerNextWave();
+                }
+            }
         }
         
         // Small delay to reduce CPU usage and control frame rate (60 FPS ~ 16ms)
         Sleep(16);
+        
+        // Demo mode UI prompts and win/lose checks
+        if (demoMode) {
+            // If waiting for next wave, show prompt
+            if (mobSystem.isWaitingForNextWave()) {
+                setCursorPosition(0, infoLine + 4);
+                setTextColor(COLOR_GREEN);
+                cout << "Wave clear, press Z to spawn next wave" << string(30, ' ');
+                resetTextColor();
+            } else {
+                setCursorPosition(0, infoLine + 4);
+                cout << string(50, ' ');
+            }
+
+            // Check victory: all waves spawned and no active mobs
+            if (mobSystem.allWavesSpawned() && mobSystem.getActiveMobCount() == 0) {
+                showCursor(true);
+                clearScreen();
+                cout << "\n\n";
+                cout << string(30, '=') << endl;
+                cout << "  Level " << levelSelected << " - Victory!" << endl;
+                cout << "  Player: " << playerName << endl;
+                cout << string(30, '=') << endl;
+                cout << "\n\nPress any key to return to level select...";
+                _getch();
+                return true;
+            }
+
+            // Check defeat: base HP reached 0
+            if (baseHP <= 0) {
+                showCursor(true);
+                clearScreen();
+                cout << "\n\n";
+                cout << string(30, '=') << endl;
+                cout << "  Level " << levelSelected << " - Defeat!" << endl;
+                cout << "  Player: " << playerName << endl;
+                cout << string(30, '=') << endl;
+                cout << "\n\nPress any key to return to level select...";
+                _getch();
+                return false;
+            }
+        }
     }
     
     showCursor(true);
@@ -705,22 +774,29 @@ void displayGameScreen(string playerName, int levelSelected) {
     
     cout << "\n\nPress any key to return to menu...";
     _getch();
+    return false;
 }
 
 // Main menu loop
 void gameLoop() {
     bool playing = true;
-    string playerName;
+    string playerName = displayStartScreen();
+    int maxUnlockedLevel = (playerName == "test") ? 10 : 1;
     
     while (playing) {
-        // Start screen
-        playerName = displayStartScreen();
-        
         // Level selection
-        int levelSelected = displayLevelSelect(playerName);
+        int levelSelected = displayLevelSelect(playerName, maxUnlockedLevel);
         
         // Game screen
-        displayGameScreen(playerName, levelSelected);
+        bool victory = displayGameScreen(playerName, levelSelected);
+
+        if (victory) {
+            if (levelSelected == 1 && maxUnlockedLevel < 2) {
+                maxUnlockedLevel = 2;
+            }
+            // After victory screen, directly return to level selection.
+            continue;
+        }
         
         // Ask if player wants to continue
         clearScreen();
