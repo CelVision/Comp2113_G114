@@ -352,6 +352,10 @@ bool displayGameScreen(string playerName, int levelSelected) {
     vector<pair<int, int>> pathCoords;
     mapManager.createPathForLevel(levelSelected, pathCoords);
     
+    // Initialize backend array for game logic processing
+    char gameStateArray[33][147];
+    mapManager.loadMapToArray(levelSelected, gameStateArray);
+    
     // Note: mob system will be initialized after basic player state (money, HP)
     
     // Tower placement mode
@@ -376,6 +380,8 @@ bool displayGameScreen(string playerName, int levelSelected) {
         for (const auto& spot : demoTowerSpots) {
             if (mapManager.canPlaceTower(spot.first, spot.second, 0)) {
                 mapManager.placeTowerAt(spot.first, spot.second, 0);
+                // Update backend array when demo tower is placed
+                mapManager.updateBackendArrayTowerPlaced(gameStateArray, spot.first, spot.second);
                 break;
             }
         }
@@ -649,6 +655,10 @@ bool displayGameScreen(string playerName, int levelSelected) {
                                 }
                             }
                         }
+                        
+                        // Update backend array immediately when tower is sold
+                        mapManager.updateBackendArrayTowerSold(gameStateArray, selRow, selCol);
+                        
                         sellModeState = 0;
                         sellTowerIndex = -1;
                     }
@@ -672,6 +682,8 @@ bool displayGameScreen(string playerName, int levelSelected) {
                             } else {
                                 // Valid placement
                                 mapManager.placeTowerAt(selRow, selCol, previewTowerIndex);
+                                // Update backend array immediately when tower is placed
+                                mapManager.updateBackendArrayTowerPlaced(gameStateArray, selRow, selCol);
                                 money -= towers[previewTowerIndex].cost;
                                 previewTowerIndex = -1;
                             }

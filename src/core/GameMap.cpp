@@ -7,6 +7,10 @@
 #include <vector>
 #include <windows.h>
 #include <conio.h>
+#include <map>
+#include <queue>
+#include <algorithm>
+#include <climits>
 
 using namespace std;
 
@@ -261,6 +265,63 @@ public:
         mapFile.close();
     }
     
+    // Load map data into backend 2D array for game logic processing
+    // Array mapping:
+    //   '+' = spawn point
+    //   '.' = tower buildable grid
+    //   'B' = base position
+    //   ' ' = road/walkable path (empty)
+    //   (empty) = blocked terrain
+    void loadMapToArray(int level, char stateArray[33][147]) {
+        // Initialize array with empty spaces
+        for (int i = 0; i < 33; i++) {
+            for (int j = 0; j < 147; j++) {
+                stateArray[i][j] = ' ';  // Default to empty
+            }
+        }
+        
+        // Read map file
+        string filename = buildMapFilePath(level);
+        ifstream mapFile(filename);
+        
+        if (!mapFile.is_open()) {
+            cout << "Error: Could not load map file " << filename << endl;
+            return;
+        }
+        
+        string line;
+        int row = 0;
+        
+        while (getline(mapFile, line) && row < 33) {
+            for (int col = 0; col < (int)line.length() && col < 147; col++) {
+                char ch = line[col];
+                
+                if (ch == '+') {
+                    // Spawn point
+                    stateArray[row][col] = '+';
+                } else if (ch == '.') {
+                    // Tower buildable grid
+                    stateArray[row][col] = '.';
+                } else if (ch == '-') {
+                    // Road/path - leave as empty space
+                    stateArray[row][col] = ' ';
+                } else if (ch == 'M') {
+                    // Base camp - convert to 'B'
+                    stateArray[row][col] = 'B';
+                } else if (ch == '#') {
+                    // Blocked terrain - leave as empty
+                    stateArray[row][col] = ' ';
+                } else {
+                    // Everything else (space, etc.) - leave empty
+                    stateArray[row][col] = ' ';
+                }
+            }
+            row++;
+        }
+        
+        mapFile.close();
+    }
+    
     void setBaseCamp(int row, int col) {
         gameMap.grid[row][col].type = BASE;
         gameMap.grid[row][col].displayChar = 'B';
@@ -484,6 +545,265 @@ public:
     
     GameMap& getGameMap() {
         return gameMap;
+    }
+
+    // ============ BACKEND PATH SYSTEM (for game logic) ============
+    
+    // Structure to hold path commands generated from backend array
+    struct PathCommand {
+        pair<int, int> startPos;
+        pair<int, int> endPos;
+        string description;  // e.g., "go left 10 tiles"
+    };
+
+    // Spawn a mob at a spawn point by finding adjacent empty (walkable) space
+    // Returns the spawn position (row, col) on success, or (-1, -1) if no space available
+    pair<int, int> spawnMobAtSpawnPoint(const char stateArray[33][147], int spawnRow, int spawnCol) {
+        // Check adjacent cells (up, down, left, right) for empty space (space character)
+        int dr[] = {-1, 1, 0, 0};
+        int dc[] = {0, 0, -1, 1};
+        
+        for (int i = 0; i < 4; i++) {
+            int newRow = spawnRow + dr[i];
+            int newCol = spawnCol + dc[i];
+            
+            // Check boundaries
+            if (newRow < 0 || newRow >= 33 || newCol < 0 || newCol >= 147) {
+                continue;
+            }
+            
+            // Check if adjacent cell is empty (road/walkable path)
+            if (stateArray[newRow][newCol] == ' ') {
+                return make_pair(newRow, newCol);
+            }
+        }
+        
+        // No adjacent empty space found
+        return make_pair(-1, -1);
+    }
+
+    // Load paths from backend array using Dijkstra's algorithm
+    // Scans for all spawn points (+) and base (B), computes shortest paths
+    // Returns a map of spawn point to path commands
+    map<pair<int, int>, vector<PathCommand>> loadPathsFromBackendArray(const char stateArray[33][147]) {
+        map<pair<int, int>, vector<PathCommand>> spawnToPaths;
+        
+        // Find base position
+        pair<int, int> basePos = make_pair(-1, -1);
+        for (int i = 0; i < 33; i++) {
+            for (int j = 0; j < 147; j++) {
+                if (stateArray[i][j] == 'B') {
+                    basePos = make_pair(i, j);
+                    break;
+                }
+            }
+            if (basePos.first != -1) break;
+        }
+        
+        if (basePos.first == -1) {
+            cerr << "Error: No base found in backend array!" << endl;
+            return spawnToPaths;
+        }
+        
+        // Find all spawn points and compute shortest paths using Dijkstra
+        for (int i = 0; i < 33; i++) {
+            for (int j = 0; j < 147; j++) {
+                if (stateArray[i][j] == '+') {
+                    pair<int, int> spawnPos = make_pair(i, j);
+                    
+                    // Run Dijkstra from this spawn point to base
+                    vector<pair<int, int>> path = dijkstraShortestPath(stateArray, spawnPos, basePos);
+                    
+                    if (!path.empty()) {
+                        // Convert path to detailed commands
+                        vector<PathCommand> commands = generatePathCommands(path);
+                        spawnToPaths[spawnPos] = commands;
+                    }
+                }
+            }
+        }
+        
+        return spawnToPaths;
+    }
+
+    // Dijkstra's algorithm to find shortest path in backend array
+    // Walkable tiles are: ' ' (road), 'B' (base)
+    vector<pair<int, int>> dijkstraShortestPath(const char stateArray[33][147], 
+                                                 pair<int, int> start, 
+                                                 pair<int, int> goal) {
+        // Distance and parent tracking
+        vector<vector<int>> dist(33, vector<int>(147, INT_MAX));
+        vector<vector<pair<int, int>>> parent(33, vector<pair<int, int>>(147, make_pair(-1, -1)));
+        
+        // Priority queue: (distance, row, col)
+        priority_queue<pair<int, pair<int, int>>, 
+                      vector<pair<int, pair<int, int>>>,
+                      greater<pair<int, pair<int, int>>>> pq;
+        
+        dist[start.first][start.second] = 0;
+        pq.push(make_pair(0, start));
+        
+        int dr[] = {-1, 1, 0, 0};
+        int dc[] = {0, 0, -1, 1};
+        
+        while (!pq.empty()) {
+            int d = pq.top().first;
+            pair<int, int> current = pq.top().second;
+            pq.pop();
+            
+            int row = current.first;
+            int col = current.second;
+            
+            // If we reached the goal
+            if (row == goal.first && col == goal.second) {
+                break;
+            }
+            
+            // Skip if we've already found a better path
+            if (d > dist[row][col]) {
+                continue;
+            }
+            
+            // Explore neighbors
+            for (int i = 0; i < 4; i++) {
+                int newRow = row + dr[i];
+                int newCol = col + dc[i];
+                
+                // Check boundaries
+                if (newRow < 0 || newRow >= 33 || newCol < 0 || newCol >= 147) {
+                    continue;
+                }
+                
+                // Check if walkable (space or base)
+                char cell = stateArray[newRow][newCol];
+                if (cell != ' ' && cell != 'B') {
+                    continue;
+                }
+                
+                int newDist = d + 1;
+                if (newDist < dist[newRow][newCol]) {
+                    dist[newRow][newCol] = newDist;
+                    parent[newRow][newCol] = make_pair(row, col);
+                    pq.push(make_pair(newDist, make_pair(newRow, newCol)));
+                }
+            }
+        }
+        
+        // Reconstruct path from goal to start
+        vector<pair<int, int>> path;
+        if (dist[goal.first][goal.second] != INT_MAX) {
+            pair<int, int> current = goal;
+            while (current.first != -1 && current.second != -1) {
+                path.push_back(current);
+                current = parent[current.first][current.second];
+            }
+            reverse(path.begin(), path.end());
+        }
+        
+        return path;
+    }
+
+    // Generate detailed path commands from a sequence of coordinates
+    // e.g., [(0,5), (0,6), (0,7), (0,8), (1,8), (1,9)] -> 
+    //       "go right 3 tiles, go down 1 tile, go right 1 tile"
+    vector<PathCommand> generatePathCommands(const vector<pair<int, int>>& path) {
+        vector<PathCommand> commands;
+        
+        if (path.size() < 2) return commands;
+        
+        int i = 0;
+        while (i < (int)path.size() - 1) {
+            pair<int, int> current = path[i];
+            int direction = 0;  // 0=up, 1=down, 2=left, 3=right
+            string dirName;
+            int count = 1;
+            
+            // Determine direction
+            int rowDelta = path[i + 1].first - current.first;
+            int colDelta = path[i + 1].second - current.second;
+            
+            if (rowDelta == -1) {
+                direction = 0;
+                dirName = "up";
+            } else if (rowDelta == 1) {
+                direction = 1;
+                dirName = "down";
+            } else if (colDelta == -1) {
+                direction = 2;
+                dirName = "left";
+            } else if (colDelta == 1) {
+                direction = 3;
+                dirName = "right";
+            } else {
+                i++;
+                continue;
+            }
+            
+            // Count consecutive steps in same direction
+            pair<int, int> commandStart = current;
+            i++;
+            while (i < (int)path.size() - 1) {
+                rowDelta = path[i + 1].first - path[i].first;
+                colDelta = path[i + 1].second - path[i].second;
+                
+                if ((direction == 0 && rowDelta == -1 && colDelta == 0) ||
+                    (direction == 1 && rowDelta == 1 && colDelta == 0) ||
+                    (direction == 2 && rowDelta == 0 && colDelta == -1) ||
+                    (direction == 3 && rowDelta == 0 && colDelta == 1)) {
+                    count++;
+                    i++;
+                } else {
+                    break;
+                }
+            }
+            
+            // Create command
+            PathCommand cmd;
+            cmd.startPos = commandStart;
+            cmd.endPos = path[i];
+            cmd.description = "go " + dirName + " " + to_string(count) + " tile" + (count > 1 ? "s" : "");
+            commands.push_back(cmd);
+        }
+        
+        return commands;
+    }
+
+    // ============ REAL-TIME TOWER BACKEND UPDATES ============
+    
+    // Update backend array when tower is placed
+    // Marks entire 3x3 area as 'T' for tower
+    void updateBackendArrayTowerPlaced(char stateArray[33][147], int centerRow, int centerCol) {
+        int startRow = centerRow - 1;
+        int startCol = centerCol - 1;
+        int endRow = centerRow + 1;
+        int endCol = centerCol + 1;
+        
+        // Mark entire 3x3 area as tower ('T')
+        for (int i = startRow; i <= endRow; i++) {
+            for (int j = startCol; j <= endCol; j++) {
+                if (i >= 0 && i < 33 && j >= 0 && j < 147) {
+                    stateArray[i][j] = 'T';
+                }
+            }
+        }
+    }
+    
+    // Update backend array when tower is sold
+    // Restores entire 3x3 area back to '.' (buildable)
+    void updateBackendArrayTowerSold(char stateArray[33][147], int centerRow, int centerCol) {
+        int startRow = centerRow - 1;
+        int startCol = centerCol - 1;
+        int endRow = centerRow + 1;
+        int endCol = centerCol + 1;
+        
+        // Restore entire 3x3 area to buildable ('.')
+        for (int i = startRow; i <= endRow; i++) {
+            for (int j = startCol; j <= endCol; j++) {
+                if (i >= 0 && i < 33 && j >= 0 && j < 147) {
+                    stateArray[i][j] = '.';
+                }
+            }
+        }
     }
 };
 
