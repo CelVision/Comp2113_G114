@@ -3,9 +3,9 @@
 Tower 1: Arrow Tower
 Symbol: A
 Cost: $50
-damage: 100
+Hitpoints: 100
 Attack Speed: 1.0s
-Hit Range: 9*9
+Hit Range: 5
 ASCII Art:
   <->
   | |
@@ -16,7 +16,7 @@ Unlock Level: 1
 Tower 2: Laser Tower
 Symbol: L
 Cost: $100
-damage: 50
+Hitpoints: 50
 Attack Speed: 1.5s
 Hit Range: ∞ (infinite row)
 ASCII Art:
@@ -29,9 +29,9 @@ Unlock Level: 2
 Tower 3: Frost Tower
 Symbol: F
 Cost: $50
-damage: 10
+Hitpoints: 10
 Attack Speed: 1.0s
-Hit Range: 7, 3x3 area
+Hit Range: 5, 3x3 area
 Slowdown: 50%
 ASCII Art:
   /*\
@@ -43,9 +43,9 @@ Unlock Level: 3
 Tower 4: Earthquake Tower
 Symbol: E
 Cost: $200
-damage: 100
+Hitpoints: 100
 Attack Speed: 1.0s
-Hit Range: 6 (circle range)
+Hit Range: 5 (circle range)
 ASCII Art:
   <!>
   | |
@@ -56,7 +56,7 @@ Unlock Level: 4
 Tower 5: Armor Penetration Tower
 Symbol: P
 Cost: $150
-damage: 150 (double when attacking armors)
+Hitpoints: 150 (double when attacking armors)
 Attack Speed: 1.0s
 Hit Range: 5
 Special: Breaks enemy armor
@@ -70,7 +70,7 @@ Unlock Level: 5
 Tower 6: War Drum Tower
 Symbol: D
 Cost: $150
-damage: 0
+Hitpoints: 0
 Attack Speed: N/A
 Hit Range: 5 (buffs in 5x5 area)
 Bonus: +25% hitspeed for nearby towers
@@ -84,7 +84,7 @@ Unlock Level: 6
 Tower 7: Hell Tower
 Symbol: H
 Cost: $200
-damage: 50% of current hp (min 50, max 500, only 50 when attacking armors)
+Hitpoints: 50% of current hp (min 50, max 500, only 50 when attacking armors)
 Attack Speed: 1.0s
 Hit Range: 5
 Damage: Percentage-based
@@ -98,7 +98,7 @@ Unlock Level: 5
 Tower 8: Thief Tower
 Symbol: T
 Cost: $200
-damage: 0
+Hitpoints: 0
 Attack Speed: N/A
 Hit Range: 5
 Bonus: +25% currency gained
@@ -112,7 +112,7 @@ Unlock Level: 8
 Tower 9: Vampire Tower
 Symbol: V
 Cost: $400
-damage: 100
+Hitpoints: 100
 Attack Speed: 1.0s
 Hit Range: 5
 Heal: 0.05% of damage dealt

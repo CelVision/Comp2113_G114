@@ -60,7 +60,7 @@ public:
         towers.clear();
         
         // Arrow Tower
-        towers.push_back({'A', "Arrow Tower", 50, 100, 1.0, 4, 
+        towers.push_back({'A', "Arrow Tower", 50, 100, 1.0, 5, 
                          {"<->", "| |", "==="}, "Basic tower, single-target", 0, 0, 0, 0, 0, false});
         
         // Laser Tower
