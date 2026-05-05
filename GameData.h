@@ -101,7 +101,7 @@ struct GameState {
 // ============ RESOURCE PATH HELPERS ============
 
 inline string buildMapFilePath(int level) {
-    return string("Maps/map_for_level") + to_string(level) + ".txt";
+    return string("map_for_level") + to_string(level) + ".txt";
 }
 
 inline string buildLevelDesignPath(int level) {
