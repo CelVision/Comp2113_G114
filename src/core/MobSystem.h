@@ -9,6 +9,7 @@
 #include <windows.h>
 #include <iostream>
 #include <unordered_map>
+#include <map>
 #include <cctype>
 
 using namespace std;
@@ -115,6 +116,7 @@ private:
     unordered_map<long long, double> towerNextAttackTime;
     vector<pair<int, int>> towerDashFlashQueue;
     bool demoRenderDirty;
+    map<pair<int, int>, vector<pair<pair<int,int>, pair<int,int>>>> spawnPointPaths;
     
     int currentWaveIndex;
     double currentWaveTime;
@@ -126,6 +128,23 @@ private:
     bool useDemoAlgorithm;
     bool demoManualWaveActive;
     bool demoWaitingForNextWave;
+    
+    // ============ Path building helper functions ============
+    string buildMapFilePath(int level) {
+        char buffer[256];
+        snprintf(buffer, sizeof(buffer), "data/maps/map_for_level%d.txt", level);
+        return string(buffer);
+    }
+    
+    string buildLevelDesignPath(int level) {
+        char buffer[256];
+        snprintf(buffer, sizeof(buffer), "data/levels/level%d_design.txt", level);
+        return string(buffer);
+    }
+    
+    string buildMobDataPath() {
+        return "data/meta/MobData.txt";
+    }
     
 public:
     int &moneyRef;
@@ -144,6 +163,16 @@ public:
         waves.clear();
         currentWaveTime = 0;
         gameTime = 0;
+        currentWaveIndex = 0;
+        
+        // Non-demo: auto-spawn waves. Demo: wait for manual trigger
+        if (useDemoAlgorithm) {
+            demoManualWaveActive = false;
+            demoWaitingForNextWave = true;
+        } else {
+            demoManualWaveActive = true;  // Auto-spawn in non-demo mode
+            demoWaitingForNextWave = false;
+        }
 
         if (useDemoAlgorithm) {
             loadDemoLevelDesign(level);
@@ -153,7 +182,19 @@ public:
         string filename = buildLevelDesignPath(level);
         ifstream file(filename);
         if (!file.is_open()) {
-            cerr << "Could not load level design: " << filename << endl;
+            // Create a default wave for testing
+            LevelWave wave;
+            wave.waveNumber = 1;
+            SpawnEvent ev;
+            ev.spawnTime = 0;
+            ev.mobType = 0;  // pigman
+            ev.spawnRow = 1;
+            ev.spawnCol = 0;
+            ev.speed = 2.0;
+            ev.routeIndex = -1;
+            wave.spawnEvents.push_back(ev);
+            wave.totalDuration = 1.0;
+            waves.push_back(wave);
             return;
         }
 
@@ -200,7 +241,7 @@ public:
                             ev.spawnRow = spawnRow;
                             ev.spawnCol = spawnCol;
                             ev.speed = mobTypes[mobType].speed;
-                            ev.routeIndex = findRouteIndexForSpawn(spawnRow, spawnCol);
+                            ev.routeIndex = -1;
                             currentWave.spawnEvents.push_back(ev);
                             lastSpawnTime = waveTime;
                         }
@@ -232,9 +273,11 @@ public:
                         ev.spawnRow = spawnRow;
                         ev.spawnCol = spawnCol;
                         ev.speed = mobTypes[mobType].speed;
-                        ev.routeIndex = findRouteIndexForSpawn(spawnRow, spawnCol);
+                        ev.routeIndex = -1;
                         currentWave.spawnEvents.push_back(ev);
                         lastSpawnTime = waveTime;
+                        waveTime += 1.0;
+                        waveTime += 1.0;
                     }
                 }
                 continue;
@@ -286,7 +329,7 @@ public:
         globalPath = nodes;
 
         const int waveCounts[4] = {5, 8, 10, 20};
-        const double spawnGap = 0.7;
+        const double spawnGap = 1.0;
         for (int w = 0; w < 4; ++w) {
             LevelWave wave;
             wave.waveNumber = w + 1;
@@ -308,9 +351,8 @@ public:
     }
 
     void triggerNextWave() {
-        if (!useDemoAlgorithm) return;
         if (currentWaveIndex >= (int)waves.size()) return;
-        if (demoManualWaveActive) return;
+        if (demoManualWaveActive || !demoWaitingForNextWave) return;
         if (!activeMobs.empty()) return;
         demoManualWaveActive = true;
         demoWaitingForNextWave = false;
@@ -319,7 +361,6 @@ public:
     }
 
     bool isWaitingForNextWave() const {
-        if (!useDemoAlgorithm) return false;
         if (currentWaveIndex >= (int)waves.size()) return false;
         return demoWaitingForNextWave;
     }
@@ -329,7 +370,6 @@ public:
     }
 
     bool consumeDemoRenderDirty() {
-        if (!useDemoAlgorithm) return true;
         bool dirty = demoRenderDirty;
         demoRenderDirty = false;
         return dirty;
@@ -370,6 +410,7 @@ public:
     void findGlobalPath() {
         globalPath.clear();
         navigationRoutes.clear();
+
         int baseRow = -1, baseCol = -1;
         for (int r = 0; r < GameMap::ROWS; r++) {
             for (int c = 0; c < GameMap::COLS; c++) {
@@ -381,27 +422,86 @@ public:
             }
             if (baseRow != -1) break;
         }
-        if (baseRow == -1) {
-            cerr << "Could not find base!" << endl;
-            return;
-        }
+        if (baseRow == -1) return;
+
+        vector<pair<int, int>> spawnSources;
         for (int row = 0; row < GameMap::ROWS; row++) {
             for (int col = 0; col < GameMap::COLS; col++) {
-                if (!isSpawnTile(row, col)) continue;
-                vector<pair<int, int>> path = findPathFromSpawn(row, col, baseRow, baseCol);
-                if (path.empty()) continue;
-                NavigationRoute route;
-                route.spawnRow = row;
-                route.spawnCol = col;
-                route.nodes = path;
-                route.commands = buildCommandsFromPath(path);
-                route.checkpointNodeIndex = (path.size() > 2) ? (int)path.size() / 2 : 0;
-                route.checkpoint = path[route.checkpointNodeIndex];
-                navigationRoutes.push_back(route);
+                if (isSpawnTile(row, col)) {
+                    spawnSources.push_back(make_pair(row, col));
+                }
             }
         }
+        if (spawnSources.empty()) {
+            for (const auto& wave : waves) {
+                for (const auto& event : wave.spawnEvents) {
+                    pair<int, int> spawnPos = make_pair(event.spawnRow, event.spawnCol);
+                    bool seen = false;
+                    for (const auto& existing : spawnSources) {
+                        if (existing.first == spawnPos.first && existing.second == spawnPos.second) {
+                            seen = true;
+                            break;
+                        }
+                    }
+                    if (!seen && spawnPos.first >= 0 && spawnPos.first < GameMap::ROWS && spawnPos.second >= 0 && spawnPos.second < GameMap::COLS) {
+                        spawnSources.push_back(spawnPos);
+                    }
+                }
+            }
+        }
+
+        for (const auto& spawn : spawnSources) {
+            vector<pair<int, int>> path = findPathFromSpawn(spawn.first, spawn.second, baseRow, baseCol);
+            if (path.empty()) continue;
+            NavigationRoute route;
+            route.spawnRow = spawn.first;
+            route.spawnCol = spawn.second;
+            route.nodes = path;
+            route.checkpointNodeIndex = (path.size() > 2) ? (int)path.size() / 2 : 0;
+            route.checkpoint = path[route.checkpointNodeIndex];
+            navigationRoutes.push_back(route);
+        }
+
         if (!navigationRoutes.empty()) {
             globalPath = navigationRoutes[0].nodes;
+        } else {
+            int spawnRow = 1;
+            int maxCol = GameMap::COLS - 1;
+            int maxRow = GameMap::ROWS - 1;
+            int startCol = findSpawnColumnForRow(spawnRow);
+            int c = startCol + 1;
+            if (c < 0) c = 0;
+            if (c > maxCol) c = maxCol;
+
+            vector<pair<int,int>> nodes;
+            nodes.push_back(make_pair(spawnRow, c));
+            for (int step = 1; step <= 140; ++step) {
+                int nc = c + step;
+                if (nc > maxCol) break;
+                nodes.push_back(make_pair(spawnRow, nc));
+            }
+            pair<int,int> last = nodes.back();
+            int curRow = last.first, curCol = last.second;
+            for (int step = 1; step <= 19; ++step) {
+                int nr = curRow + step;
+                if (nr > maxRow) break;
+                nodes.push_back(make_pair(nr, curCol));
+            }
+            last = nodes.back();
+            curRow = last.first;
+            curCol = last.second;
+            for (int step = 1; step <= 111; ++step) {
+                int nc = curCol - step;
+                if (nc < 0) break;
+                nodes.push_back(make_pair(curRow, nc));
+            }
+            globalPath = nodes;
+        }
+
+        for (auto& wave : waves) {
+            for (auto& event : wave.spawnEvents) {
+                event.routeIndex = findRouteIndexForSpawn(event.spawnRow, event.spawnCol);
+            }
         }
     }
 
@@ -442,6 +542,7 @@ public:
         q.push(make_pair(startRow, startCol));
         visited[startRow][startCol] = true;
         bool found = false;
+
         while (!q.empty()) {
             pair<int, int> current = q.front(); q.pop();
             int row = current.first, col = current.second;
@@ -457,7 +558,9 @@ public:
                 q.push(make_pair(nextRow, nextCol));
             }
         }
+
         if (!found) return vector<pair<int, int>>();
+
         vector<pair<int, int>> reversedPath;
         int currentRow = baseRow, currentCol = baseCol;
         while (!(currentRow == startRow && currentCol == startCol)) {
@@ -469,21 +572,6 @@ public:
         }
         reversedPath.push_back(make_pair(startRow, startCol));
         return vector<pair<int, int>>(reversedPath.rbegin(), reversedPath.rend());
-    }
-
-    vector<char> buildCommandsFromPath(const vector<pair<int, int>>& path) const {
-        vector<char> commands;
-        if (path.size() < 2) return commands;
-        for (size_t i = 1; i < path.size(); i++) {
-            int rowDelta = path[i].first - path[i-1].first;
-            int colDelta = path[i].second - path[i-1].second;
-            if (rowDelta == -1 && colDelta == 0) commands.push_back('U');
-            else if (rowDelta == 1 && colDelta == 0) commands.push_back('D');
-            else if (rowDelta == 0 && colDelta == -1) commands.push_back('L');
-            else if (rowDelta == 0 && colDelta == 1) commands.push_back('R');
-            else commands.push_back('?');
-        }
-        return commands;
     }
 
     long long makeTowerKey(int row, int col) const {
@@ -678,57 +766,17 @@ public:
     // ============ 修正后的 update 函数（波次切换逻辑） ============
     void update(double dt, const vector<Tower>& towers) {
         gameTime += dt;
-        if (!(useDemoAlgorithm && !demoManualWaveActive)) {
+        
+        // Always increment wave time for auto-spawn OR manual demo mode
+        bool shouldSpawn = (demoManualWaveActive) || (!useDemoAlgorithm);
+        if (shouldSpawn) {
             currentWaveTime += dt;
         }
         
         if (currentWaveIndex < (int)waves.size()) {
             LevelWave& wave = waves[currentWaveIndex];
-            if (useDemoAlgorithm) {
-                if (demoManualWaveActive) {
-                    for (auto& event : wave.spawnEvents) {
-                        if (event.spawnTime <= currentWaveTime && event.spawnTime >= currentWaveTime - dt) {
-                            MobInstance newMob(event.mobType, (double)event.spawnRow, (double)event.spawnCol, event.speed, currentWaveIndex);
-                            newMob.health = mobTypes[event.mobType].hp;
-                            newMob.maxHealth = mobTypes[event.mobType].hp;
-                            newMob.baseGold = mobGolds[event.mobType];
-                            newMob.modifiedSpeed = event.speed;
-                            newMob.modifier = MobModifier();
-                            newMob.routeIndex = event.routeIndex;
-                            newMob.routeStepIndex = 0;
-                            newMob.passedCheckpoint = false;
-                            newMob.checkpointIndex = -1;
-                            newMob.spawnPointRow = event.spawnRow;
-                            newMob.spawnPointCol = event.spawnCol;
-                            const vector<pair<int, int>>* routeNodes = nullptr;
-                            if (newMob.routeIndex >= 0 && newMob.routeIndex < (int)navigationRoutes.size()) {
-                                routeNodes = &navigationRoutes[newMob.routeIndex].nodes;
-                                newMob.checkpointIndex = navigationRoutes[newMob.routeIndex].checkpointNodeIndex;
-                            } else if (!globalPath.empty()) {
-                                routeNodes = &globalPath;
-                            }
-                            updateMobDynamicStats(newMob, gameTime);
-                            if (routeNodes != nullptr && routeNodes->size() >= 2) {
-                                double nextRow = (*routeNodes)[1].first, nextCol = (*routeNodes)[1].second;
-                                double dist = sqrt(pow(nextRow - newMob.posRow, 2) + pow(nextCol - newMob.posCol, 2));
-                                if (dist > 0) {
-                                    newMob.velocityRow = (nextRow - newMob.posRow) / dist * newMob.modifiedSpeed;
-                                    newMob.velocityCol = (nextCol - newMob.posCol) / dist * newMob.modifiedSpeed;
-                                }
-                            }
-                            activeMobs.push_back(newMob);
-                        }
-                    }
-                    if (currentWaveTime > wave.totalDuration && activeMobs.empty()) {
-                        demoManualWaveActive = false;
-                        demoWaitingForNextWave = true;
-                        currentWaveIndex++;
-                        currentWaveTime = 0;
-                        demoRenderDirty = true;
-                    }
-                }
-            } else {
-                // 非 demo 模式：按时间产生敌人
+            // Spawn mobs when wave is active (demo manual or non-demo auto)
+            if (demoManualWaveActive || (!useDemoAlgorithm && !activeMobs.empty() == false)) {
                 for (auto& event : wave.spawnEvents) {
                     if (event.spawnTime <= currentWaveTime && event.spawnTime >= currentWaveTime - dt) {
                         MobInstance newMob(event.mobType, (double)event.spawnRow, (double)event.spawnCol, event.speed, currentWaveIndex);
@@ -763,19 +811,16 @@ public:
                         demoRenderDirty = true;
                     }
                 }
-
-                // ========== 修正后的波次完成判断 ==========
-                bool allSpawned = (currentWaveTime >= wave.totalDuration);
-                int remainingInWave = 0;
-                for (const auto& m : activeMobs) {
-                    if (m.spawnWaveId == currentWaveIndex && m.isAlive) remainingInWave++;
-                }
-                for (const auto& e : wave.spawnEvents) {
-                    if (e.spawnTime > currentWaveTime) remainingInWave++;
-                }
-                if (allSpawned && remainingInWave == 0) {
+                // Check if wave is complete
+                if (currentWaveTime > wave.totalDuration && activeMobs.empty()) {
+                    if (useDemoAlgorithm) {
+                        // Demo mode: wait for manual Z press
+                        demoManualWaveActive = false;
+                        demoWaitingForNextWave = true;
+                    }
                     currentWaveIndex++;
                     currentWaveTime = 0;
+                    demoRenderDirty = true;
                 }
             }
         }
@@ -938,7 +983,7 @@ public:
                 setTextColor(11);
                 char mobChar = mobTypes[mob.mobType].symbol;
                 if (gameTime - mob.lastHitTime < 0.18) setTextColor(12);
-                if (useDemoAlgorithm && (mobTypes[mob.mobType].name.find("Pigman") != string::npos || mobTypes[mob.mobType].name.find("pigman") != string::npos)) {
+                if (mobTypes[mob.mobType].name.find("Pigman") != string::npos || mobTypes[mob.mobType].name.find("pigman") != string::npos) {
                     mobChar = 'p';
                 }
                 cout << mobChar;
@@ -1109,8 +1154,8 @@ public:
             if (numPos < line.length()) {
                 size_t numEnd = numPos;
                 while (numEnd < line.length() && isdigit(line[numEnd])) numEnd++;
-                spawnRow = stoi(line.substr(numPos, numEnd - numPos));
-                spawnCol = (line.find("left") != string::npos) ? 1 : (line.find("right") != string::npos) ? GameMap::COLS - 2 : 50;
+                spawnRow = stoi(line.substr(numPos, numEnd - numPos));  // Keep as-is, no -1
+                spawnCol = (line.find("left") != string::npos) ? 0 : (line.find("right") != string::npos) ? GameMap::COLS - 1 : 50;
             }
         } else if (line.find("column") != string::npos) {
             size_t colPos = line.find("column");
@@ -1120,7 +1165,7 @@ public:
                 size_t numEnd = numPos;
                 while (numEnd < line.length() && isdigit(line[numEnd])) numEnd++;
                 spawnCol = stoi(line.substr(numPos, numEnd - numPos));
-                spawnRow = (line.find("top") != string::npos) ? 1 : (line.find("down") != string::npos) ? GameMap::ROWS - 2 : 16;
+                spawnRow = (line.find("top") != string::npos) ? 0 : (line.find("down") != string::npos) ? GameMap::ROWS - 1 : 15;
             }
         }
     }
@@ -1187,6 +1232,20 @@ public:
 
     int getMobReward(const MobInstance& mob) const {
         return mob.baseGold;
+    }
+    
+    // Load backend paths from computed spawn points to base
+    void loadBackendPaths(const map<pair<int, int>, vector<pair<pair<int,int>, pair<int,int>>>>& backendPaths) {
+        spawnPointPaths = backendPaths;
+    }
+    
+    // Get path for a specific spawn point
+    vector<pair<pair<int,int>, pair<int,int>>> getPathForSpawn(int spawnRow, int spawnCol) {
+        auto it = spawnPointPaths.find({spawnRow, spawnCol});
+        if (it != spawnPointPaths.end()) {
+            return it->second;
+        }
+        return vector<pair<pair<int,int>, pair<int,int>>>();
     }
 };
 

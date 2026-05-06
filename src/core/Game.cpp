@@ -9,6 +9,7 @@
 #include <windows.h>
 #include "GameData.h"
 #include "MobSystem.h"
+#include "TowerLogic.h"
 
 // Note: GameMap.cpp is included as a header-like implementation file
 #include "GameMap.cpp"
@@ -198,6 +199,7 @@ string displayStartScreen() {
     
     cout << string(33, ' ') << "Welcome to BYTE RUSH!" << endl;
     cout << string(30, ' ') << "A Tower Defense Adventure" << endl;
+    cout << string(30, ' ') << "Make Sure Your Console is Full Screen" << endl;
     cout << "\n\n";
     
     cout << string(35, ' ') << "Enter your name:" << endl;
@@ -348,9 +350,8 @@ bool displayGameScreen(string playerName, int levelSelected) {
     // Load map from file for the selected level
     mapManager.loadMapFromFile(levelSelected);
     
-    // Create path for the level
+    // Use existing map spaces - don't create artificial paths
     vector<pair<int, int>> pathCoords;
-    mapManager.createPathForLevel(levelSelected, pathCoords);
     
     // Initialize backend array for game logic processing
     char gameStateArray[33][147];
@@ -365,13 +366,32 @@ bool displayGameScreen(string playerName, int levelSelected) {
     bool showFlash = false;
     int flashCounter = 0;
     bool demoMode = (playerName == "demo");
-    int money = demoMode ? 500 : 10000;
+    int money = demoMode ? 500 : 250;
     int baseHP = 10;
 
     // Initialize mob system (needs money/baseHP refs)
     MobSystemManager mobSystem(mapManager.getAllMobs(), mapManager.getGameMap(), money, baseHP, demoMode);
-    mobSystem.findGlobalPath();
     mobSystem.loadLevelDesign(levelSelected);
+    if (!demoMode) {
+        mobSystem.findGlobalPath();
+    }
+    
+    // Load backend paths for mob movement (using previously declared gameStateArray)
+    mapManager.loadMapToArray(levelSelected, gameStateArray);
+    auto backendPathMap = mapManager.loadPathsFromBackendArray(gameStateArray);
+    
+    // Convert backend path format to simple coordinate pairs
+    map<pair<int, int>, vector<pair<pair<int,int>, pair<int,int>>>> pathData;
+    for (const auto& entry : backendPathMap) {
+        auto spawnCoord = entry.first;
+        const auto& pathCommands = entry.second;
+        vector<pair<pair<int,int>, pair<int,int>>> cmdPairs;
+        for (const auto& cmd : pathCommands) {
+            cmdPairs.push_back({cmd.startPos, cmd.endPos});
+        }
+        pathData[spawnCoord] = cmdPairs;
+    }
+    mobSystem.loadBackendPaths(pathData);
 
     if (demoMode && levelSelected == 1) {
         const vector<pair<int, int>> demoTowerSpots = {
@@ -442,10 +462,7 @@ bool displayGameScreen(string playerName, int levelSelected) {
         flashCounter++;
         showFlash = (flashCounter / 20) % 2 == 0;  // Flash every 20 frames (slower)
 
-        bool redrawMapThisFrame = true;
-        if (demoMode) {
-            redrawMapThisFrame = mobSystem.consumeDemoRenderDirty();
-        }
+        bool redrawMapThisFrame = mobSystem.consumeDemoRenderDirty();
         
            // Update header info (also show current wave remaining/total)
            setCursorPosition(0, 1);
@@ -538,7 +555,8 @@ bool displayGameScreen(string playerName, int levelSelected) {
 
                     switch (tile.type) {
                         case PATH:
-                            setTextColor(COLOR_YELLOW);
+                            if (tile.displayChar == '+') setTextColor(COLOR_YELLOW);
+                            else if (tile.displayChar == '-') setTextColor(COLOR_GRAY);
                             cout << tile.displayChar;
                             resetTextColor();
                             break;
@@ -722,55 +740,51 @@ bool displayGameScreen(string playerName, int levelSelected) {
                 sellModeState = 0;
             }
             else if (key == 'z' || key == 'Z') {
-                if (demoMode) {
-                    mobSystem.triggerNextWave();
-                }
+                mobSystem.triggerNextWave();
             }
         }
         
         // Small delay to reduce CPU usage and control frame rate (60 FPS ~ 16ms)
         Sleep(16);
         
-        // Demo mode UI prompts and win/lose checks
-        if (demoMode) {
-            // If waiting for next wave, show prompt
-            if (mobSystem.isWaitingForNextWave()) {
-                setCursorPosition(0, infoLine + 4);
-                setTextColor(COLOR_GREEN);
-                cout << "Wave clear, press Z to spawn next wave" << string(30, ' ');
-                resetTextColor();
-            } else {
-                setCursorPosition(0, infoLine + 4);
-                cout << string(50, ' ');
-            }
+        // UI prompts and win/lose checks (available in all modes)
+        // If waiting for next wave, show prompt
+        if (mobSystem.isWaitingForNextWave()) {
+            setCursorPosition(0, infoLine + 4);
+            setTextColor(COLOR_GREEN);
+            cout << "Wave clear, press Z to spawn next wave" << string(30, ' ');
+            resetTextColor();
+        } else {
+            setCursorPosition(0, infoLine + 4);
+            cout << string(50, ' ');
+        }
 
-            // Check victory: all waves spawned and no active mobs
-            if (mobSystem.allWavesSpawned() && mobSystem.getActiveMobCount() == 0) {
-                showCursor(true);
-                clearScreen();
-                cout << "\n\n";
-                cout << string(30, '=') << endl;
-                cout << "  Level " << levelSelected << " - Victory!" << endl;
-                cout << "  Player: " << playerName << endl;
-                cout << string(30, '=') << endl;
-                cout << "\n\nPress any key to return to level select...";
-                _getch();
-                return true;
-            }
+        // Check victory: all waves spawned and no active mobs
+        if (mobSystem.allWavesSpawned() && mobSystem.getActiveMobCount() == 0) {
+            showCursor(true);
+            clearScreen();
+            cout << "\n\n";
+            cout << string(30, '=') << endl;
+            cout << "  Level " << levelSelected << " - Victory!" << endl;
+            cout << "  Player: " << playerName << endl;
+            cout << string(30, '=') << endl;
+            cout << "\n\nPress any key to return to level select...";
+            _getch();
+            return true;
+        }
 
-            // Check defeat: base HP reached 0
-            if (baseHP <= 0) {
-                showCursor(true);
-                clearScreen();
-                cout << "\n\n";
-                cout << string(30, '=') << endl;
-                cout << "  Level " << levelSelected << " - Defeat!" << endl;
-                cout << "  Player: " << playerName << endl;
-                cout << string(30, '=') << endl;
-                cout << "\n\nPress any key to return to level select...";
-                _getch();
-                return false;
-            }
+        // Check defeat: base HP reached 0
+        if (baseHP <= 0) {
+            showCursor(true);
+            clearScreen();
+            cout << "\n\n";
+            cout << string(30, '=') << endl;
+            cout << "  Level " << levelSelected << " - Defeat!" << endl;
+            cout << "  Player: " << playerName << endl;
+            cout << string(30, '=') << endl;
+            cout << "\n\nPress any key to return to level select...";
+            _getch();
+            return false;
         }
     }
     

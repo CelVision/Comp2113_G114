@@ -5,7 +5,8 @@ Symbol: A
 Cost: $50
 damage: 100
 Attack Speed: 1.0s
-Hit Range: 9*9
+Hit Range: 9*9, single damage 
+Animation: "-" turns yellow when attacking
 ASCII Art:
   <->
   | |
@@ -17,13 +18,14 @@ Tower 2: Laser Tower
 Symbol: L
 Cost: $100
 damage: 50
-Attack Speed: 1.5s
-Hit Range: ∞ (infinite row)
+Attack Speed: 2.0s
+Hit Range: 3*∞ (three entire row) aoe
+Animation: "o" turns yellow when attacking
 ASCII Art:
   <o>
   | |
   ^^^
-Description: Attacks all enemies in a row in front of it
+Description: Attacks all enemies in the three rows it occupies
 Unlock Level: 2
 
 Tower 3: Frost Tower
@@ -31,8 +33,9 @@ Symbol: F
 Cost: $50
 damage: 10
 Attack Speed: 1.0s
-Hit Range: 7, 3x3 area
+Hit Range: 7*7, bullet causes 3x3 aoe
 Slowdown: 50%
+Animation: "*"turns cyan when attacking
 ASCII Art:
   /*\
   | |
@@ -45,12 +48,16 @@ Symbol: E
 Cost: $200
 damage: 100
 Attack Speed: 1.0s
-Hit Range: 6 (circle range)
+Hit Range: 7*7 square, aoe
 ASCII Art:
   <!>
   | |
   ^^^
-Description: Conducts multi-target attack in circle range, kills groups of low-hp enemies
+Animation: shifts to the ASCII art below when attacking, then shifts back
+  < >
+  |!|
+  ^^^
+Description: Conducts aoe and kills groups of low-hp enemies
 Unlock Level: 4
 
 Tower 5: Armor Penetration Tower
@@ -58,12 +65,13 @@ Symbol: P
 Cost: $150
 damage: 150 (double when attacking armors)
 Attack Speed: 1.0s
-Hit Range: 5
+Hit Range: 8*8
 Special: Breaks enemy armor
 ASCII Art:
   <^>
   | |
   ===
+animation: "^" turns yellow when attacking
 Description: Single-target attack that breaks enemy armor (armor reduces damage to 1 per hit)
 Unlock Level: 5
 
@@ -72,41 +80,46 @@ Symbol: D
 Cost: $150
 damage: 0
 Attack Speed: N/A
-Hit Range: 5 (buffs in 5x5 area)
-Bonus: +25% hitspeed for nearby towers
+Hit Range: 5*5 (buffs in 5x5 area), as long as 1 block overlaps with the range
+Bonus: +25% attack speed for nearby towers
 ASCII Art:
   [ ]
   | |
   ...
-Description: Doesn't attack but buffs all towers within 5x5 area with +25% HP
+animation: in bracket shows the tower its affecting
+  [n]
+  | |
+  ...
+Description: Doesn't attack but buffs all towers within 5x5 area with +25% attack speed
 Unlock Level: 6
 
 Tower 7: Hell Tower
 Symbol: H
 Cost: $200
-damage: 50% of current hp (min 50, max 500, only 50 when attacking armors)
+damage: 50% of current hp (min 10, max 500, only 10 when attacking armors)
 Attack Speed: 1.0s
-Hit Range: 5
+Hit Range: 9*9
 Damage: Percentage-based
 ASCII Art:
   <%>
   | |
   ===
-Description: Single-target attack with percentage damage, targets highest-hp enemy first
+animation: "%" turns orange when attacking
+Description: Single-target attack with percentage damage, targets highest-hp enemy in its range first
 Unlock Level: 5
 
 Tower 8: Thief Tower
 Symbol: T
 Cost: $200
-damage: 0
-Attack Speed: N/A
-Hit Range: 5
-Bonus: +25% currency gained
+damage: 50
+Attack Speed: 1.0s
+Hit Range: 5*5
 ASCII Art:
   <$>
   | |
   ...
-Description: Doesn't attack, increases currency gained when killing enemies
+animation： "$" turns yellow when attacking
+Description:  drops 50% more gold on last hit kill
 Unlock Level: 8
 
 Tower 9: Vampire Tower
@@ -114,11 +127,14 @@ Symbol: V
 Cost: $400
 damage: 100
 Attack Speed: 1.0s
-Hit Range: 5
-Heal: 0.05% of damage dealt
+Hit Range: 6*6
 ASCII Art:
   <+>
   | |
   ===
-Description: Heals base camp for 0.05% of damage caused (avg 1 HP per 20 seconds)
+animation: "+"turns red when attacking. number in the alt art shows kill count (0 to 9, 10 kills heal and reset)
+  <+>
+  |n|
+  ===
+Description: Heals base 1 HP for every 10 enemy it kills(must be last hit)
 Unlock Level: 9

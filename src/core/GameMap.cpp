@@ -119,35 +119,80 @@ public:
     }
     
     void createPathForLevel(int level, vector<pair<int, int>>& pathCoordinates) {
-        // Clear existing path
+        // Clear existing non-spawn PATHs (preserve spawn points)
         for (int i = 0; i < GameMap::ROWS; i++) {
             for (int j = 0; j < GameMap::COLS; j++) {
-                if (gameMap.grid[i][j].type == PATH) {
+                if (gameMap.grid[i][j].type == PATH && gameMap.grid[i][j].displayChar != '+') {
                     gameMap.grid[i][j].type = BUILDABLE;
                     gameMap.grid[i][j].displayChar = '.';
                 }
             }
         }
         
-        // Simple example paths based on level
-        // Path goes from left side to right side with curves
+        // Create a path from spawn points (rows 1-3, col 0) to base (row 21, col 31)
+        // Strategy: go down/up to row 21, then go right to column 31
         
         if (level == 1) {
-            // Straight path with a curve
-            int row = 16;  // Middle row
-            for (int col = 1; col < 98; col++) {
-                gameMap.grid[row][col].type = PATH;
-                gameMap.grid[row][col].displayChar = '-';
-                pathCoordinates.push_back({row, col});
+            // For level 1: Start at spawn row (use row 2 as centerline), go right then down to base
+            int pathRow = 2;  // Middle spawn row
+            
+            // Path 1: Horizontal from column 1 to near base column, then down to base
+            // Go right from spawn (column 0) to column 20
+            for (int col = 1; col <= 20; col++) {
+                if (gameMap.grid[pathRow][col].displayChar != '+') {
+                    gameMap.grid[pathRow][col].type = PATH;
+                    gameMap.grid[pathRow][col].displayChar = '-';
+                    pathCoordinates.push_back({pathRow, col});
+                }
             }
+            
+            // Go down from row 2 to row 21 (at column 20)
+            for (int row = pathRow + 1; row <= 21; row++) {
+                if (gameMap.grid[row][20].displayChar != 'M') {  // Don't overwrite base
+                    gameMap.grid[row][20].type = PATH;
+                    gameMap.grid[row][20].displayChar = '-';
+                    pathCoordinates.push_back({row, 20});
+                }
+            }
+            
+            // Go right from column 20 to base column 31 (at row 21)
+            for (int col = 21; col <= 31; col++) {
+                if (gameMap.grid[21][col].displayChar != 'M' && gameMap.grid[21][col].displayChar != '#') {
+                    gameMap.grid[21][col].type = PATH;
+                    gameMap.grid[21][col].displayChar = '-';
+                    pathCoordinates.push_back({21, col});
+                }
+            }
+            
+            // Create alternate paths from rows 1 and 3 down to the main row 2 path
+            // Row 1 down to row 2
+            for (int row = 1; row < 2; row++) {
+                if (gameMap.grid[row][1].displayChar != '+') {
+                    gameMap.grid[row][1].type = PATH;
+                    gameMap.grid[row][1].displayChar = '-';
+                    pathCoordinates.push_back({row, 1});
+                }
+            }
+            // Row 3 down to row 2
+            for (int row = 3; row < 21; row++) {
+                if (gameMap.grid[row][1].displayChar != '+') {
+                    gameMap.grid[row][1].type = PATH;
+                    gameMap.grid[row][1].displayChar = '-';
+                    pathCoordinates.push_back({row, 1});
+                }
+                if (row > 2) break;  // Only do next row
+            }
+            
         } else if (level <= 9) {
-            // More complex winding path based on level
-            // Example: Snake-like pattern
+            // For other levels: Create winding path
             vector<pair<int, int>> path = generateWavyPath(level);
             for (auto& coord : path) {
-                gameMap.grid[coord.first][coord.second].type = PATH;
-                gameMap.grid[coord.first][coord.second].displayChar = '-';
-                pathCoordinates.push_back(coord);
+                if (gameMap.grid[coord.first][coord.second].displayChar != '+' && 
+                    gameMap.grid[coord.first][coord.second].displayChar != 'M') {
+                    gameMap.grid[coord.first][coord.second].type = PATH;
+                    gameMap.grid[coord.first][coord.second].displayChar = '-';
+                    pathCoordinates.push_back(coord);
+                }
             }
         }
         
@@ -223,6 +268,7 @@ public:
         
         string line;
         int row = 0;
+        int spawnCharCount = 0, baseCharCount = 0, pathCharCount = 0;
         
         while (getline(mapFile, line) && row < GameMap::ROWS) {
             for (int col = 0; col < (int)line.length() && col < GameMap::COLS; col++) {
@@ -236,20 +282,29 @@ public:
                     // Spawn point (road/path)
                     gameMap.grid[row][col].type = PATH;
                     gameMap.grid[row][col].displayChar = '+';
+                    spawnCharCount++;
+                    cerr << "DEBUG loadMapFromFile: Found '+' at (" << row << ", " << col << ")" << endl;
                 } else if (ch == '-') {
                     // Road path
                     gameMap.grid[row][col].type = PATH;
                     gameMap.grid[row][col].displayChar = '-';
+                    pathCharCount++;
                 } else if (ch == 'M') {
                     // Base camp
                     gameMap.grid[row][col].type = BASE;
                     gameMap.grid[row][col].displayChar = 'M';
+                    baseCharCount++;
+                    cerr << "DEBUG loadMapFromFile: Found 'M' at (" << row << ", " << col << ")" << endl;
                 } else if (ch == '#') {
                     // Blocked terrain
                     gameMap.grid[row][col].type = BLOCKED;
                     gameMap.grid[row][col].displayChar = '#';
+                } else if (ch == ' ') {
+                    // Space = walkable path
+                    gameMap.grid[row][col].type = PATH;
+                    gameMap.grid[row][col].displayChar = ' ';
                 } else {
-                    // Everything else (space, etc.) is blocked
+                    // Unknown characters default to blocked
                     gameMap.grid[row][col].type = BLOCKED;
                     gameMap.grid[row][col].displayChar = ' ';
                 }
@@ -262,6 +317,7 @@ public:
             row++;
         }
         
+        cerr << "DEBUG loadMapFromFile: Loaded map from " << filename << " - Found " << spawnCharCount << " '+', " << baseCharCount << " 'M', " << pathCharCount << " '-'" << endl;
         mapFile.close();
     }
     
