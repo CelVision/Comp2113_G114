@@ -1,0 +1,22 @@
+# Build artifacts
+*.exe
+*.o
+*.obj
+*.out
+*.a
+*.lib
+
+# Logs and debug outputs
+*.log
+*_output.txt
+all_paths_output.txt
+mob_movement_*.txt
+
+# Temporary/backup files
+*.bak
+*.tmp
+
+# IDE/system
+.vscode/*.code-workspace
+.DS_Store
+Thumbs.db

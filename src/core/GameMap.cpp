@@ -699,8 +699,8 @@ public:
         dist[start.first][start.second] = 0;
         pq.push(make_pair(0, start));
         
-        int dr[] = {-1, 1, 0, 0};
-        int dc[] = {0, 0, -1, 1};
+        int dr[] = {0, 0, -1, 1};
+        int dc[] = {1, -1, 0, 0};
         
         while (!pq.empty()) {
             int d = pq.top().first;
@@ -736,7 +736,8 @@ public:
                     continue;
                 }
                 
-                int newDist = d + 1;
+                int stepCost = (dr[i] == 0) ? 1 : 3;
+                int newDist = d + stepCost;
                 if (newDist < dist[newRow][newCol]) {
                     dist[newRow][newCol] = newDist;
                     parent[newRow][newCol] = make_pair(row, col);
@@ -834,11 +835,21 @@ public:
         int endRow = centerRow + 1;
         int endCol = centerCol + 1;
         
-        // Mark entire 3x3 area as tower ('T')
+        // Determine tower symbol from placed map data if available.
+        char centerSymbol = 'T';
+        if (centerRow >= 0 && centerRow < GameMap::ROWS && centerCol >= 0 && centerCol < GameMap::COLS) {
+            int tIndex = gameMap.grid[centerRow][centerCol].towerIndex;
+            if (tIndex >= 0 && tIndex < (int)towers.size()) {
+                centerSymbol = towers[tIndex].symbol; // e.g. 'A','L','F','E'
+            }
+        }
+
+        // Mark entire 3x3 area: center uses tower symbol, surrounding cells use generic 'T'
         for (int i = startRow; i <= endRow; i++) {
             for (int j = startCol; j <= endCol; j++) {
                 if (i >= 0 && i < 33 && j >= 0 && j < 147) {
-                    stateArray[i][j] = 'T';
+                    if (i == centerRow && j == centerCol) stateArray[i][j] = centerSymbol;
+                    else stateArray[i][j] = 'T';
                 }
             }
         }

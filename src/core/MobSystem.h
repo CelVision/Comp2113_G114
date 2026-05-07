@@ -153,9 +153,8 @@ public:
     MobSystemManager(vector<Mob>& mobTypes_, GameMap& gameMap_, int &money_, int &baseHP_, bool demoMode = false) 
         : mobTypes(mobTypes_), gameMap(gameMap_), currentWaveIndex(0), 
             currentWaveTime(0), gameTime(0), moneyRef(money_), baseHPRef(baseHP_),
-            useDemoAlgorithm(demoMode), demoManualWaveActive(false), demoWaitingForNextWave(false), demoRenderDirty(true) {
+            useDemoAlgorithm(demoMode), demoManualWaveActive(false), demoWaitingForNextWave(true), demoRenderDirty(true) {
         loadMobGolds();
-        if (useDemoAlgorithm) demoWaitingForNextWave = true;
     }
     
     // ============ 修正后的 loadLevelDesign ============
@@ -165,14 +164,9 @@ public:
         gameTime = 0;
         currentWaveIndex = 0;
         
-        // Non-demo: auto-spawn waves. Demo: wait for manual trigger
-        if (useDemoAlgorithm) {
-            demoManualWaveActive = false;
-            demoWaitingForNextWave = true;
-        } else {
-            demoManualWaveActive = true;  // Auto-spawn in non-demo mode
-            demoWaitingForNextWave = false;
-        }
+        // Both demo and regular mode: wait for 'z' key to trigger waves
+        demoManualWaveActive = false;
+        demoWaitingForNextWave = true;
 
         if (useDemoAlgorithm) {
             loadDemoLevelDesign(level);
@@ -234,16 +228,21 @@ public:
                     int count, mobType, spawnRow, spawnCol;
                     parseSpawnLine(spawnPart, count, mobType, spawnRow, spawnCol);
                     if (count > 0 && mobType >= 0) {
+                        const double spawnGap = 1.0; // 1 second between mobs
                         for (int i = 0; i < count; ++i) {
                             SpawnEvent ev;
                             ev.spawnTime = waveTime;
                             ev.mobType = mobType;
-                            ev.spawnRow = spawnRow;
-                            ev.spawnCol = spawnCol;
+                            int finalSpawnRow = spawnRow;
+                            int finalSpawnCol = spawnCol;
+                            if (!snapSpawnToNearestPlus(finalSpawnRow, finalSpawnCol)) continue;
+                            ev.spawnRow = finalSpawnRow;
+                            ev.spawnCol = finalSpawnCol;
                             ev.speed = mobTypes[mobType].speed;
                             ev.routeIndex = -1;
                             currentWave.spawnEvents.push_back(ev);
-                            lastSpawnTime = waveTime;
+                            lastSpawnTime = ev.spawnTime;
+                            waveTime += spawnGap;
                         }
                     }
                 }
@@ -270,13 +269,16 @@ public:
                         SpawnEvent ev;
                         ev.spawnTime = waveTime;
                         ev.mobType = mobType;
-                        ev.spawnRow = spawnRow;
-                        ev.spawnCol = spawnCol;
+                        int finalSpawnRow = spawnRow;
+                        int finalSpawnCol = spawnCol;
+                        if (!snapSpawnToNearestPlus(finalSpawnRow, finalSpawnCol)) continue;
+                        ev.spawnRow = finalSpawnRow;
+                        ev.spawnCol = finalSpawnCol;
                         ev.speed = mobTypes[mobType].speed;
                         ev.routeIndex = -1;
                         currentWave.spawnEvents.push_back(ev);
-                        lastSpawnTime = waveTime;
-                        waveTime += 1.0;
+                        lastSpawnTime = ev.spawnTime;
+                        // Advance by 1 second between spawns (avoid stacking)
                         waveTime += 1.0;
                     }
                 }
@@ -304,6 +306,7 @@ public:
         int c = findSpawnColumnForRow(spawnRow) + 1;
         if (c < 0) c = 0;
         if (c > maxCol) c = maxCol;
+        snapSpawnToNearestPlus(spawnRow, c);
 
         vector<pair<int,int>> nodes;
         nodes.push_back({spawnRow, c});
@@ -360,9 +363,10 @@ public:
         currentWaveTime = 0;
     }
 
-    bool isWaitingForNextWave() const {
+    // Waiting for next wave only when explicitly set AND there are no active mobs
+    bool isWaitingForNextWave() {
         if (currentWaveIndex >= (int)waves.size()) return false;
-        return demoWaitingForNextWave;
+        return demoWaitingForNextWave && activeMobs.empty();
     }
 
     bool allWavesSpawned() const {
@@ -432,20 +436,18 @@ public:
                 }
             }
         }
-        if (spawnSources.empty()) {
-            for (const auto& wave : waves) {
-                for (const auto& event : wave.spawnEvents) {
-                    pair<int, int> spawnPos = make_pair(event.spawnRow, event.spawnCol);
-                    bool seen = false;
-                    for (const auto& existing : spawnSources) {
-                        if (existing.first == spawnPos.first && existing.second == spawnPos.second) {
-                            seen = true;
-                            break;
-                        }
+        for (const auto& wave : waves) {
+            for (const auto& event : wave.spawnEvents) {
+                pair<int, int> spawnPos = make_pair(event.spawnRow, event.spawnCol);
+                bool seen = false;
+                for (const auto& existing : spawnSources) {
+                    if (existing.first == spawnPos.first && existing.second == spawnPos.second) {
+                        seen = true;
+                        break;
                     }
-                    if (!seen && spawnPos.first >= 0 && spawnPos.first < GameMap::ROWS && spawnPos.second >= 0 && spawnPos.second < GameMap::COLS) {
-                        spawnSources.push_back(spawnPos);
-                    }
+                }
+                if (!seen && spawnPos.first >= 0 && spawnPos.first < GameMap::ROWS && spawnPos.second >= 0 && spawnPos.second < GameMap::COLS) {
+                    spawnSources.push_back(spawnPos);
                 }
             }
         }
@@ -515,6 +517,50 @@ public:
         return gameMap.grid[row][col].displayChar == '+';
     }
 
+    vector<pair<int, int>> getAllSpawnTiles() const {
+        vector<pair<int, int>> spawns;
+        for (int row = 0; row < GameMap::ROWS; ++row) {
+            for (int col = 0; col < GameMap::COLS; ++col) {
+                if (isSpawnTile(row, col)) {
+                    spawns.push_back(make_pair(row, col));
+                }
+            }
+        }
+        return spawns;
+    }
+
+    bool snapSpawnToNearestPlus(int& spawnRow, int& spawnCol) {
+        vector<pair<int, int>> spawns = getAllSpawnTiles();
+        if (!spawns.empty()) {
+            long long bestDist = (1LL << 60);
+            int bestRow = spawns[0].first;
+            int bestCol = spawns[0].second;
+            for (const auto& s : spawns) {
+                long long dr = (long long)s.first - (long long)spawnRow;
+                long long dc = (long long)s.second - (long long)spawnCol;
+                long long dist2 = dr * dr + dc * dc;
+                if (dist2 < bestDist) {
+                    bestDist = dist2;
+                    bestRow = s.first;
+                    bestCol = s.second;
+                }
+            }
+            spawnRow = bestRow;
+            spawnCol = bestCol;
+            return true;
+        }
+
+        // Maps without any '+': promote the requested valid tile to a spawn tile.
+        if (spawnRow < 0) spawnRow = 0;
+        if (spawnRow >= GameMap::ROWS) spawnRow = GameMap::ROWS - 1;
+        if (spawnCol < 0) spawnCol = 0;
+        if (spawnCol >= GameMap::COLS) spawnCol = GameMap::COLS - 1;
+
+        gameMap.grid[spawnRow][spawnCol].type = PATH;
+        gameMap.grid[spawnRow][spawnCol].displayChar = '+';
+        return true;
+    }
+
     int findSpawnColumnForRow(int spawnRow) const {
         if (spawnRow < 0 || spawnRow >= GameMap::ROWS) return 0;
         for (int col = 0; col < GameMap::COLS; col++) {
@@ -547,10 +593,15 @@ public:
             pair<int, int> current = q.front(); q.pop();
             int row = current.first, col = current.second;
             if (row == baseRow && col == baseCol) { found = true; break; }
-            int dr[4] = {-1, 1, 0, 0};
-            int dc[4] = {0, 0, -1, 1};
+            vector<pair<int, int>> directions;
+            int horizontalStep = (baseCol >= startCol) ? 1 : -1;
+            int verticalStep = (baseRow >= startRow) ? 1 : -1;
+            directions.push_back(make_pair(0, horizontalStep));
+            directions.push_back(make_pair(verticalStep, 0));
+            directions.push_back(make_pair(-verticalStep, 0));
+            directions.push_back(make_pair(0, -horizontalStep));
             for (int i = 0; i < 4; i++) {
-                int nextRow = row + dr[i], nextCol = col + dc[i];
+                int nextRow = row + directions[i].first, nextCol = col + directions[i].second;
                 if (!isWalkableTile(nextRow, nextCol)) continue;
                 if (visited[nextRow][nextCol]) continue;
                 visited[nextRow][nextCol] = true;
@@ -640,13 +691,12 @@ public:
                 }
             }
             else if (tower.name == "Laser Tower") {
-                int targetRow = centerRow;
                 for (int i = 0; i < (int)activeMobs.size(); ++i) {
                     MobInstance& mob = activeMobs[i];
                     if (!mob.isAlive) continue;
                     if (mobTypes[mob.mobType].isFlying) continue;
                     int mobRow = (int)round(mob.posRow);
-                    if (mobRow == targetRow) {
+                    if (abs(mobRow - centerRow) <= 1) {
                         damageToMob(mob, tower.hitpoints);
                         mob.lastHitTime = gameTime;
                     }
@@ -767,16 +817,16 @@ public:
     void update(double dt, const vector<Tower>& towers) {
         gameTime += dt;
         
-        // Always increment wave time for auto-spawn OR manual demo mode
-        bool shouldSpawn = (demoManualWaveActive) || (!useDemoAlgorithm);
+        // Both demo and regular modes wait for manual wave trigger via 'z' key
+        bool shouldSpawn = demoManualWaveActive;
         if (shouldSpawn) {
             currentWaveTime += dt;
         }
         
         if (currentWaveIndex < (int)waves.size()) {
             LevelWave& wave = waves[currentWaveIndex];
-            // Spawn mobs when wave is active (demo manual or non-demo auto)
-            if (demoManualWaveActive || (!useDemoAlgorithm && !activeMobs.empty() == false)) {
+            // Spawn mobs only when wave is manually triggered (both demo and regular mode)
+            if (demoManualWaveActive) {
                 for (auto& event : wave.spawnEvents) {
                     if (event.spawnTime <= currentWaveTime && event.spawnTime >= currentWaveTime - dt) {
                         MobInstance newMob(event.mobType, (double)event.spawnRow, (double)event.spawnCol, event.speed, currentWaveIndex);
@@ -797,6 +847,34 @@ public:
                             newMob.checkpointIndex = navigationRoutes[newMob.routeIndex].checkpointNodeIndex;
                         } else if (!globalPath.empty()) {
                             routeNodes = &globalPath;
+                        } else {
+                            int baseRow = -1, baseCol = -1;
+                            for (int row = 0; row < GameMap::ROWS; ++row) {
+                                for (int col = 0; col < GameMap::COLS; ++col) {
+                                    if (gameMap.grid[row][col].type == BASE) {
+                                        baseRow = row;
+                                        baseCol = col;
+                                        break;
+                                    }
+                                }
+                                if (baseRow != -1) break;
+                            }
+
+                            if (baseRow != -1) {
+                                vector<pair<int, int>> fallbackPath = findPathFromSpawn((int)round(newMob.posRow), (int)round(newMob.posCol), baseRow, baseCol);
+                                if (fallbackPath.size() >= 2) {
+                                    NavigationRoute route;
+                                    route.spawnRow = (int)round(newMob.posRow);
+                                    route.spawnCol = (int)round(newMob.posCol);
+                                    route.nodes = fallbackPath;
+                                    route.checkpointNodeIndex = (fallbackPath.size() > 2) ? (int)fallbackPath.size() / 2 : 0;
+                                    route.checkpoint = fallbackPath[route.checkpointNodeIndex];
+                                    navigationRoutes.push_back(route);
+                                    newMob.routeIndex = (int)navigationRoutes.size() - 1;
+                                    newMob.checkpointIndex = navigationRoutes[newMob.routeIndex].checkpointNodeIndex;
+                                    routeNodes = &navigationRoutes[newMob.routeIndex].nodes;
+                                }
+                            }
                         }
                         updateMobDynamicStats(newMob, gameTime);
                         if (routeNodes != nullptr && routeNodes->size() >= 2) {
@@ -806,6 +884,9 @@ public:
                                 newMob.velocityRow = (nextRow - newMob.posRow) / dist * newMob.modifiedSpeed;
                                 newMob.velocityCol = (nextCol - newMob.posCol) / dist * newMob.modifiedSpeed;
                             }
+                        } else {
+                            // No valid route: skip spawn rather than creating a stuck mob.
+                            continue;
                         }
                         activeMobs.push_back(newMob);
                         demoRenderDirty = true;
@@ -844,22 +925,25 @@ public:
                 demoRenderDirty = true;
             }
             if (routeNodes != nullptr && mob.routeStepIndex < (int)routeNodes->size()) {
+                // Ensure we don't get stuck on repeated/identical nodes: skip zero-distance nodes
                 double nextRow = (*routeNodes)[mob.routeStepIndex].first, nextCol = (*routeNodes)[mob.routeStepIndex].second;
                 double dist = sqrt(pow(nextRow - mob.posRow, 2) + pow(nextCol - mob.posCol, 2));
-                if (dist < 1.0) {
+
+                // If we're effectively on the target (or target equals current pos), advance until we find a different node
+                while (mob.routeStepIndex < (int)routeNodes->size() && dist < 0.6) {
                     if (!mob.passedCheckpoint && mob.checkpointIndex >= 0 && mob.routeStepIndex >= mob.checkpointIndex) {
                         mob.passedCheckpoint = true;
                     }
                     mob.routeStepIndex++;
-                    if (mob.routeStepIndex < (int)routeNodes->size()) {
-                        nextRow = (*routeNodes)[mob.routeStepIndex].first;
-                        nextCol = (*routeNodes)[mob.routeStepIndex].second;
-                        dist = sqrt(pow(nextRow - mob.posRow, 2) + pow(nextCol - mob.posCol, 2));
-                        if (dist > 0) {
-                            mob.velocityRow = (nextRow - mob.posRow) / dist * mob.modifiedSpeed;
-                            mob.velocityCol = (nextCol - mob.posCol) / dist * mob.modifiedSpeed;
-                        }
-                    }
+                    if (mob.routeStepIndex >= (int)routeNodes->size()) break;
+                    nextRow = (*routeNodes)[mob.routeStepIndex].first;
+                    nextCol = (*routeNodes)[mob.routeStepIndex].second;
+                    dist = sqrt(pow(nextRow - mob.posRow, 2) + pow(nextCol - mob.posCol, 2));
+                }
+
+                if (mob.routeStepIndex < (int)routeNodes->size() && dist > 1e-6) {
+                    mob.velocityRow = (nextRow - mob.posRow) / dist * mob.modifiedSpeed;
+                    mob.velocityCol = (nextCol - mob.posCol) / dist * mob.modifiedSpeed;
                 }
             }
             if (routeNodes != nullptr && mob.routeStepIndex >= (int)routeNodes->size()) {
@@ -1154,7 +1238,9 @@ public:
             if (numPos < line.length()) {
                 size_t numEnd = numPos;
                 while (numEnd < line.length() && isdigit(line[numEnd])) numEnd++;
-                spawnRow = stoi(line.substr(numPos, numEnd - numPos));  // Keep as-is, no -1
+                spawnRow = stoi(line.substr(numPos, numEnd - numPos)) - 1;
+                if (spawnRow < 0) spawnRow = 0;
+                if (spawnRow >= GameMap::ROWS) spawnRow = GameMap::ROWS - 1;
                 spawnCol = (line.find("left") != string::npos) ? 0 : (line.find("right") != string::npos) ? GameMap::COLS - 1 : 50;
             }
         } else if (line.find("column") != string::npos) {
@@ -1165,7 +1251,7 @@ public:
                 size_t numEnd = numPos;
                 while (numEnd < line.length() && isdigit(line[numEnd])) numEnd++;
                 spawnCol = stoi(line.substr(numPos, numEnd - numPos));
-                spawnRow = (line.find("top") != string::npos) ? 0 : (line.find("down") != string::npos) ? GameMap::ROWS - 1 : 15;
+                spawnRow = (line.find("top") != string::npos || line.find("up") != string::npos) ? 0 : (line.find("down") != string::npos || line.find("bottom") != string::npos) ? GameMap::ROWS - 1 : GameMap::ROWS - 1;
             }
         }
     }
@@ -1237,6 +1323,87 @@ public:
     // Load backend paths from computed spawn points to base
     void loadBackendPaths(const map<pair<int, int>, vector<pair<pair<int,int>, pair<int,int>>>>& backendPaths) {
         spawnPointPaths = backendPaths;
+        if (spawnPointPaths.empty()) return;
+
+        auto rebuildNodes = [](const vector<pair<pair<int,int>, pair<int,int>>>& commands) {
+            vector<pair<int, int>> nodes;
+            if (commands.empty()) return nodes;
+
+            nodes.push_back(commands.front().first);
+            for (const auto& command : commands) {
+                pair<int, int> current = nodes.back();
+                pair<int, int> target = command.second;
+                while (current.first != target.first || current.second != target.second) {
+                    if (current.first < target.first) current.first++;
+                    else if (current.first > target.first) current.first--;
+                    else if (current.second < target.second) current.second++;
+                    else if (current.second > target.second) current.second--;
+                    nodes.push_back(current);
+                }
+            }
+            return nodes;
+        };
+
+        for (const auto& entry : spawnPointPaths) {
+            vector<pair<int, int>> nodes = rebuildNodes(entry.second);
+            if (nodes.size() < 2) continue;
+
+            int existingRouteIndex = findRouteIndexForSpawn(entry.first.first, entry.first.second);
+            if (existingRouteIndex >= 0) {
+                navigationRoutes[existingRouteIndex].nodes = nodes;
+                navigationRoutes[existingRouteIndex].checkpointNodeIndex = (nodes.size() > 2) ? (int)nodes.size() / 2 : 0;
+                navigationRoutes[existingRouteIndex].checkpoint = nodes[navigationRoutes[existingRouteIndex].checkpointNodeIndex];
+            } else {
+                NavigationRoute route;
+                route.spawnRow = entry.first.first;
+                route.spawnCol = entry.first.second;
+                route.nodes = nodes;
+                route.checkpointNodeIndex = (nodes.size() > 2) ? (int)nodes.size() / 2 : 0;
+                route.checkpoint = nodes[route.checkpointNodeIndex];
+                navigationRoutes.push_back(route);
+            }
+        }
+
+        int baseRow = -1;
+        int baseCol = -1;
+        for (int row = 0; row < GameMap::ROWS; ++row) {
+            for (int col = 0; col < GameMap::COLS; ++col) {
+                if (gameMap.grid[row][col].type == BASE) {
+                    baseRow = row;
+                    baseCol = col;
+                    break;
+                }
+            }
+            if (baseRow != -1) break;
+        }
+
+        if (baseRow != -1) {
+            for (const auto& wave : waves) {
+                for (const auto& event : wave.spawnEvents) {
+                    if (findRouteIndexForSpawn(event.spawnRow, event.spawnCol) >= 0) continue;
+                    vector<pair<int, int>> nodes = findPathFromSpawn(event.spawnRow, event.spawnCol, baseRow, baseCol);
+                    if (nodes.size() < 2) continue;
+
+                    NavigationRoute route;
+                    route.spawnRow = event.spawnRow;
+                    route.spawnCol = event.spawnCol;
+                    route.nodes = nodes;
+                    route.checkpointNodeIndex = (nodes.size() > 2) ? (int)nodes.size() / 2 : 0;
+                    route.checkpoint = nodes[route.checkpointNodeIndex];
+                    navigationRoutes.push_back(route);
+                }
+            }
+        }
+
+        if (!navigationRoutes.empty()) {
+            globalPath = navigationRoutes[0].nodes;
+        }
+
+        for (auto& wave : waves) {
+            for (auto& event : wave.spawnEvents) {
+                event.routeIndex = findRouteIndexForSpawn(event.spawnRow, event.spawnCol);
+            }
+        }
     }
     
     // Get path for a specific spawn point

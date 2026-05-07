@@ -393,16 +393,42 @@ bool displayGameScreen(string playerName, int levelSelected) {
     }
     mobSystem.loadBackendPaths(pathData);
 
+    // DEBUG: print navigation routes for verification
+    {
+        auto routes = mobSystem.getNavigationRoutes();
+        cerr << "DEBUG: Navigation routes count=" << routes.size() << endl;
+        for (size_t ri = 0; ri < routes.size(); ++ri) {
+            cerr << "Route " << ri << " spawn=(" << routes[ri].spawnRow << "," << routes[ri].spawnCol << ") nodes=";
+            for (const auto &n : routes[ri].nodes) cerr << "(" << n.first << "," << n.second << ")";
+            cerr << " checkpointIndex=" << routes[ri].checkpointNodeIndex << "\n";
+        }
+    }
+
+    // Also print global path for debugging
+    {
+        // Accessing private globalPath via a temporary helper call would be cleaner,
+        // but use findGlobalPath() and then read first navigation route as fallback.
+        // Print note: globalPath is internal; we report navigationRoutes[0] if exists.
+        auto routes2 = mobSystem.getNavigationRoutes();
+        if (!routes2.empty()) {
+            cerr << "DEBUG: Using navigationRoutes[0] as globalPath, size=" << routes2[0].nodes.size() << "\n";
+        } else {
+            cerr << "DEBUG: No navigation routes available to represent globalPath" << endl;
+        }
+    }
+
     if (demoMode && levelSelected == 1) {
         const vector<pair<int, int>> demoTowerSpots = {
             {5, 10}, {5, 20}, {5, 30}, {5, 40}
         };
-        for (const auto& spot : demoTowerSpots) {
-            if (mapManager.canPlaceTower(spot.first, spot.second, 0)) {
-                mapManager.placeTowerAt(spot.first, spot.second, 0);
+        // Place the first four tower types at demo spots for quick verification
+        for (size_t ti = 0; ti < demoTowerSpots.size() && ti < 4; ++ti) {
+            const auto& spot = demoTowerSpots[ti];
+            int towerIndex = (int)ti; // 0..3 -> Arrow, Laser, Frost, Earthquake
+            if (mapManager.canPlaceTower(spot.first, spot.second, towerIndex)) {
+                mapManager.placeTowerAt(spot.first, spot.second, towerIndex);
                 // Update backend array when demo tower is placed
                 mapManager.updateBackendArrayTowerPlaced(gameStateArray, spot.first, spot.second);
-                break;
             }
         }
     }
@@ -427,11 +453,6 @@ bool displayGameScreen(string playerName, int levelSelected) {
     setCursorPosition(0, 0);
     cout << "\n";
     cout << string(20, '=') << " BYTE RUSH - Level " << levelSelected << " " << string(20, '=') << endl;
-        // Wave info: remaining/total for current wave
-        int waveRemaining = mobSystem.getRemainingInCurrentWave();
-        int waveTotal = mobSystem.getTotalSpawnsCurrentWave();
-        cout << "Player: " << playerName << " | Money: $" << money << " | HP: " << baseHP << "/10"
-            << " | wave: " << waveRemaining << "/" << waveTotal << endl;
     cout << string(75, '=') << endl;
     cout << "\n";
     int mapStartLine = 5;  // Line where map starts
@@ -546,12 +567,13 @@ bool displayGameScreen(string playerName, int levelSelected) {
                         }
                     }
 
-                    if (isCheckpoint && tile.type == PATH) {
-                        setTextColor(COLOR_GREEN);
-                        cout << 'C';
-                        resetTextColor();
-                        continue;
-                    }
+                    // Checkpoint rendering disabled - was causing mobs to stop
+                    // if (isCheckpoint && tile.type == PATH) {
+                    //     setTextColor(COLOR_GREEN);
+                    //     cout << 'C';
+                    //     resetTextColor();
+                    //     continue;
+                    // }
 
                     switch (tile.type) {
                         case PATH:
@@ -754,9 +776,6 @@ bool displayGameScreen(string playerName, int levelSelected) {
             setTextColor(COLOR_GREEN);
             cout << "Wave clear, press Z to spawn next wave" << string(30, ' ');
             resetTextColor();
-        } else {
-            setCursorPosition(0, infoLine + 4);
-            cout << string(50, ' ');
         }
 
         // Check victory: all waves spawned and no active mobs
