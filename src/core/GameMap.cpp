@@ -72,11 +72,11 @@ public:
                          {"<o>", "| |", "^^^"}, "Row attack tower", 0, 0, 0, 0, 0, false});
         
         // Frost Tower
-        towers.push_back({'F', "Frost Tower", 50, 10, 1.0, 3, 
+        towers.push_back({'F', "Frost Tower", 50, 10, 1.0, 4, 
                          {"/*\\", "| |", "^^^"}, "Crowd control, slows enemies", 50, 0, 0, 0, 0, false});
         
         // Earthquake Tower
-        towers.push_back({'E', "Earthquake Tower", 200, 100, 1.0, 3, 
+        towers.push_back({'E', "Earthquake Tower", 200, 100, 1.0, 4, 
                          {"<!>", "| |", "^^^"}, "Multi-target in circle", 0, 0, 0, 0, 0, false});
         
         // Hell Tower

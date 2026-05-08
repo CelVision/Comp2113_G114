@@ -9,6 +9,7 @@
 #include <windows.h>
 #include <iostream>
 #include <unordered_map>
+#include <unordered_set>
 #include <map>
 #include <cctype>
 
@@ -114,6 +115,7 @@ private:
     vector<pair<int, int>> globalPath;
     vector<NavigationRoute> navigationRoutes;
     unordered_map<long long, double> towerNextAttackTime;
+    unordered_set<long long> knownTowerKeys;
     unordered_map<long long, int> vampireKillCounts;
     vector<pair<int, int>> towerDashFlashQueue;
     vector<pair<pair<int, int>, string>> towerAttackFlashQueue;  // Store tower type for animation
@@ -717,6 +719,28 @@ public:
     // ============ 塔攻击逻辑（已完整，保持不变） ============
     void processTowerAttacks(const vector<Tower>& towers) {
         vector<pair<int, int>> towerCenters = getPlacedTowerCenters();
+        // Build current tower key set and initialize newly-placed towers' cooldown
+        unordered_set<long long> currentKeys;
+        for (const auto &center : towerCenters) {
+            long long k = makeTowerKey(center.first, center.second);
+            currentKeys.insert(k);
+            if (knownTowerKeys.find(k) == knownTowerKeys.end()) {
+                // Newly placed tower: reset its next attack time so it can fire immediately
+                towerNextAttackTime[k] = 0.0;
+                knownTowerKeys.insert(k);
+            }
+        }
+        // Remove keys for towers that no longer exist
+        vector<long long> toRemove;
+        for (const auto &k : knownTowerKeys) {
+            if (currentKeys.find(k) == currentKeys.end()) toRemove.push_back(k);
+        }
+        for (auto &k : toRemove) {
+            knownTowerKeys.erase(k);
+            // Also erase nextAttackTime entry to avoid stale entries lingering
+            auto it = towerNextAttackTime.find(k);
+            if (it != towerNextAttackTime.end()) towerNextAttackTime.erase(it);
+        }
         for (const auto& center : towerCenters) {
             int centerRow = center.first, centerCol = center.second;
             const Tile& centerTile = gameMap.grid[centerRow][centerCol];
@@ -828,15 +852,14 @@ public:
                 }
             }
             else if (tower.name == "Earthquake Tower" || tower.symbol == 'E') {
-                // Earthquake is a fixed 7x7 square AoE: half range = 3 around tower center.
-                const int quakeHalfRange = 3;
+                // Earthquake scans 9x9 (hitRange=4) around tower center, damages all mobs in that square AoE.
                 int targetCount = 0;
                 for (int i = 0; i < (int)activeMobs.size(); ++i) {
                     MobInstance& mob = activeMobs[i];
                     if (!mob.isAlive) continue;
                     int mobRow = (int)round(mob.posRow);
                     int mobCol = (int)round(mob.posCol);
-                    if (abs(mobRow - centerRow) <= quakeHalfRange && abs(mobCol - centerCol) <= quakeHalfRange) {
+                    if (abs(mobRow - centerRow) <= tower.hitRange && abs(mobCol - centerCol) <= tower.hitRange) {
                         damageToMob(mob, tower.hitpoints);
                         mob.lastHitTime = gameTime;
                         targetCount++;
