@@ -393,30 +393,6 @@ bool displayGameScreen(string playerName, int levelSelected) {
     }
     mobSystem.loadBackendPaths(pathData);
 
-    // DEBUG: print navigation routes for verification
-    {
-        auto routes = mobSystem.getNavigationRoutes();
-        cerr << "DEBUG: Navigation routes count=" << routes.size() << endl;
-        for (size_t ri = 0; ri < routes.size(); ++ri) {
-            cerr << "Route " << ri << " spawn=(" << routes[ri].spawnRow << "," << routes[ri].spawnCol << ") nodes=";
-            for (const auto &n : routes[ri].nodes) cerr << "(" << n.first << "," << n.second << ")";
-            cerr << " checkpointIndex=" << routes[ri].checkpointNodeIndex << "\n";
-        }
-    }
-
-    // Also print global path for debugging
-    {
-        // Accessing private globalPath via a temporary helper call would be cleaner,
-        // but use findGlobalPath() and then read first navigation route as fallback.
-        // Print note: globalPath is internal; we report navigationRoutes[0] if exists.
-        auto routes2 = mobSystem.getNavigationRoutes();
-        if (!routes2.empty()) {
-            cerr << "DEBUG: Using navigationRoutes[0] as globalPath, size=" << routes2[0].nodes.size() << "\n";
-        } else {
-            cerr << "DEBUG: No navigation routes available to represent globalPath" << endl;
-        }
-    }
-
     if (demoMode && levelSelected == 1) {
         const vector<pair<int, int>> demoTowerSpots = {
             {5, 10}, {5, 20}, {5, 30}, {5, 40}
@@ -776,6 +752,10 @@ bool displayGameScreen(string playerName, int levelSelected) {
             setTextColor(COLOR_GREEN);
             cout << "Wave clear, press Z to spawn next wave" << string(30, ' ');
             resetTextColor();
+        } else {
+            // Clear any stale wave prompt while spawning is in progress.
+            setCursorPosition(0, infoLine + 4);
+            cout << string(80, ' ');
         }
 
         // Check victory: all waves spawned and no active mobs

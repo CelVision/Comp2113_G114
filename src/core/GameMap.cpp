@@ -68,35 +68,35 @@ public:
                          {"<->", "| |", "==="}, "Basic tower, single-target", 0, 0, 0, 0, 0, false});
         
         // Laser Tower
-        towers.push_back({'L', "Laser Tower", 100, 50, 1.5, 999, 
+        towers.push_back({'L', "Laser Tower", 100, 50, 2.0, 999, 
                          {"<o>", "| |", "^^^"}, "Row attack tower", 0, 0, 0, 0, 0, false});
         
         // Frost Tower
-        towers.push_back({'F', "Frost Tower", 50, 10, 1.0, 5, 
+        towers.push_back({'F', "Frost Tower", 50, 10, 1.0, 3, 
                          {"/*\\", "| |", "^^^"}, "Crowd control, slows enemies", 50, 0, 0, 0, 0, false});
         
         // Earthquake Tower
-        towers.push_back({'E', "Earthquake Tower", 200, 100, 1.0, 5, 
+        towers.push_back({'E', "Earthquake Tower", 200, 100, 1.0, 3, 
                          {"<!>", "| |", "^^^"}, "Multi-target in circle", 0, 0, 0, 0, 0, false});
         
         // Hell Tower
-        towers.push_back({'H', "Hell Tower", 200, 50, 1.0, 5, 
+        towers.push_back({'H', "Hell Tower", 200, 50, 1.0, 4, 
                          {"<%>", "| |", "==="}, "Percentage damage, targets high-hp", 0, 50, 0, 0, 0, false});
         
         // Thief Tower
-        towers.push_back({'T', "Thief Tower", 200, 0, 0, 5, 
-                         {"<$>", "| |", "..."}, "Increases currency gained", 0, 0, 25, 0, 0, false});
+        towers.push_back({'T', "Thief Tower", 200, 50, 1.0, 2, 
+                         {"<$>", "| |", "..."}, "Increases currency gained", 0, 0, 50, 0, 0, false});
         
         // Armor Penetration Tower
-        towers.push_back({'P', "Armor Penetration Tower", 150, 50, 1.0, 5, 
+        towers.push_back({'P', "Armor Penetration Tower", 150, 150, 1.0, 4, 
                          {"<^>", "| |", "==="}, "Breaks enemy armor", 0, 0, 0, 0, 0, true});
         
         // War Drum Tower
-        towers.push_back({'D', "War Drum Tower", 150, 0, 0, 5, 
+        towers.push_back({'D', "War Drum Tower", 150, 0, 0, 2, 
                          {"[ ]", "| |", "..."}, "Buffs towers within range", 0, 0, 0, 25, 0, false});
         
         // Vampire Tower
-        towers.push_back({'V', "Vampire Tower", 400, 100, 1.0, 5, 
+        towers.push_back({'V', "Vampire Tower", 400, 100, 1.0, 3, 
                          {"<+>", "| |", "==="}, "Heals base camp from damage", 0, 0, 0, 0, 5, false});
     }
     
@@ -283,7 +283,7 @@ public:
                     gameMap.grid[row][col].type = PATH;
                     gameMap.grid[row][col].displayChar = '+';
                     spawnCharCount++;
-                    cerr << "DEBUG loadMapFromFile: Found '+' at (" << row << ", " << col << ")" << endl;
+
                 } else if (ch == '-') {
                     // Road path
                     gameMap.grid[row][col].type = PATH;
@@ -294,7 +294,6 @@ public:
                     gameMap.grid[row][col].type = BASE;
                     gameMap.grid[row][col].displayChar = 'M';
                     baseCharCount++;
-                    cerr << "DEBUG loadMapFromFile: Found 'M' at (" << row << ", " << col << ")" << endl;
                 } else if (ch == '#') {
                     // Blocked terrain
                     gameMap.grid[row][col].type = BLOCKED;
@@ -317,7 +316,6 @@ public:
             row++;
         }
         
-        cerr << "DEBUG loadMapFromFile: Loaded map from " << filename << " - Found " << spawnCharCount << " '+', " << baseCharCount << " 'M', " << pathCharCount << " '-'" << endl;
         mapFile.close();
     }
     

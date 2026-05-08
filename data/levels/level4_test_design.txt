@@ -1,0 +1,39 @@
+level 4 - test
+
+3 waves
+
+Wave 1 - speed-check cluster
+  # Spawn a line of fast enemies to measure movement
+  6 Houndling from row 7 left side
+  6 Houndling from row 13 left side
+  6 Houndling from row 19 left side
+  [wait 2 second]
+  3 Batman from row 7 left side
+  3 Batman from row 13 left side
+  3 Batman from row 19 left side
+
+Wave 2 - Earthquake AoE stress
+  # Dense clumps to ensure Earthquake hits multiple targets
+  4 Mini Mammon from row 6 left side
+  4 Mini Mammon from row 8 left side
+  6 Pigman from row 13 left side
+  6 Pigman from row 25 left side
+  4 Armored Mammon from row 19 left side
+  [wait 1 second]
+  8 Pigman from row 12 left side
+  8 Pigman from row 24 left side
+
+Wave 3 - mixed & special interactions
+  2 Alpha Wolf from row 7 left side
+  2 Alpha Wolf from row 13 left side
+  1 Dragon Type 1 from row 19 left side
+  1 Dragon Type 3 from row 25 left side
+  6 Spiderman from row 7 left side
+  6 Spiderman from row 13 left side
+  [wait 3 second]
+  10 Houndling from row 7 left side
+
+[Notes]
+Purpose: measure per-type tile/sec movement (Houndling/Batman fast),
+verify Earthquake deals AoE damage to clustered Mini Mammon/Pigman,
+and observe Spiderman slow interactions and Alpha Wolf summons.

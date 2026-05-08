@@ -114,7 +114,9 @@ private:
     vector<pair<int, int>> globalPath;
     vector<NavigationRoute> navigationRoutes;
     unordered_map<long long, double> towerNextAttackTime;
+    unordered_map<long long, int> vampireKillCounts;
     vector<pair<int, int>> towerDashFlashQueue;
+    vector<pair<pair<int, int>, string>> towerAttackFlashQueue;  // Store tower type for animation
     bool demoRenderDirty;
     map<pair<int, int>, vector<pair<pair<int,int>, pair<int,int>>>> spawnPointPaths;
     
@@ -149,6 +151,76 @@ private:
 public:
     int &moneyRef;
     int &baseHPRef;
+
+    // Spawn a single mob immediately for diagnostics or testing.
+    void spawnSingleMob(int mobType, int spawnRow, int spawnCol, double speed) {
+        if (mobType < 0 || mobType >= (int)mobTypes.size()) return;
+        int finalRow = spawnRow;
+        int finalCol = spawnCol;
+        if (!snapSpawnToNearestPlus(finalRow, finalCol)) return;
+
+        MobInstance newMob(mobType, (double)finalRow, (double)finalCol, speed, currentWaveIndex);
+        newMob.health = mobTypes[mobType].hp;
+        newMob.maxHealth = mobTypes[mobType].hp;
+        newMob.baseGold = mobGolds[mobType];
+        newMob.modifiedSpeed = speed;
+        newMob.modifier = MobModifier();
+        newMob.routeIndex = findRouteIndexForSpawn(finalRow, finalCol);
+        newMob.routeStepIndex = 0;
+        newMob.passedCheckpoint = false;
+        newMob.checkpointIndex = -1;
+        newMob.spawnPointRow = finalRow;
+        newMob.spawnPointCol = finalCol;
+
+        const vector<pair<int,int>>* routeNodes = nullptr;
+        if (newMob.routeIndex >= 0 && newMob.routeIndex < (int)navigationRoutes.size()) {
+            routeNodes = &navigationRoutes[newMob.routeIndex].nodes;
+            newMob.checkpointIndex = navigationRoutes[newMob.routeIndex].checkpointNodeIndex;
+        } else if (!globalPath.empty()) {
+            routeNodes = &globalPath;
+        } else {
+            int baseRow = -1, baseCol = -1;
+            for (int r = 0; r < GameMap::ROWS; ++r) {
+                for (int c = 0; c < GameMap::COLS; ++c) {
+                    if (gameMap.grid[r][c].type == BASE) { baseRow = r; baseCol = c; break; }
+                }
+                if (baseRow != -1) break;
+            }
+            if (baseRow != -1) {
+                vector<pair<int,int>> fallbackPath = findPathFromSpawn(finalRow, finalCol, baseRow, baseCol);
+                if (fallbackPath.size() >= 2) {
+                    NavigationRoute route;
+                    route.spawnRow = finalRow;
+                    route.spawnCol = finalCol;
+                    route.nodes = fallbackPath;
+                    route.checkpointNodeIndex = (fallbackPath.size() > 2) ? (int)fallbackPath.size() / 2 : 0;
+                    route.checkpoint = fallbackPath[route.checkpointNodeIndex];
+                    navigationRoutes.push_back(route);
+                    newMob.routeIndex = (int)navigationRoutes.size() - 1;
+                    newMob.checkpointIndex = navigationRoutes[newMob.routeIndex].checkpointNodeIndex;
+                    routeNodes = &navigationRoutes[newMob.routeIndex].nodes;
+                }
+            }
+        }
+
+        updateMobDynamicStats(newMob, gameTime);
+        if (routeNodes != nullptr && routeNodes->size() >= 2) {
+            double nextRow = (*routeNodes)[1].first, nextCol = (*routeNodes)[1].second;
+            double dist = sqrt(pow(nextRow - newMob.posRow, 2) + pow(nextCol - newMob.posCol, 2));
+            if (dist > 0) {
+                newMob.velocityRow = (nextRow - newMob.posRow) / dist * newMob.modifiedSpeed;
+                newMob.velocityCol = (nextCol - newMob.posCol) / dist * newMob.modifiedSpeed;
+            }
+            activeMobs.push_back(newMob);
+            demoRenderDirty = true;
+        }
+    }
+
+    // Clear all active mobs (useful for isolated diagnostics)
+    void clearActiveMobs() {
+        activeMobs.clear();
+        demoRenderDirty = true;
+    }
 
     MobSystemManager(vector<Mob>& mobTypes_, GameMap& gameMap_, int &money_, int &baseHP_, bool demoMode = false) 
         : mobTypes(mobTypes_), gameMap(gameMap_), currentWaveIndex(0), 
@@ -238,8 +310,8 @@ public:
                             if (!snapSpawnToNearestPlus(finalSpawnRow, finalSpawnCol)) continue;
                             ev.spawnRow = finalSpawnRow;
                             ev.spawnCol = finalSpawnCol;
+                            ev.routeIndex = findRouteIndexForSpawn(finalSpawnRow, finalSpawnCol);
                             ev.speed = mobTypes[mobType].speed;
-                            ev.routeIndex = -1;
                             currentWave.spawnEvents.push_back(ev);
                             lastSpawnTime = ev.spawnTime;
                             waveTime += spawnGap;
@@ -274,8 +346,8 @@ public:
                         if (!snapSpawnToNearestPlus(finalSpawnRow, finalSpawnCol)) continue;
                         ev.spawnRow = finalSpawnRow;
                         ev.spawnCol = finalSpawnCol;
+                        ev.routeIndex = findRouteIndexForSpawn(finalSpawnRow, finalSpawnCol);
                         ev.speed = mobTypes[mobType].speed;
-                        ev.routeIndex = -1;
                         currentWave.spawnEvents.push_back(ev);
                         lastSpawnTime = ev.spawnTime;
                         // Advance by 1 second between spawns (avoid stacking)
@@ -654,13 +726,14 @@ public:
             long long key = makeTowerKey(centerRow, centerCol);
             double& nextAttackTime = towerNextAttackTime[key];
             double finalAttackSpeed = tower.attackSpeed;
-            for (int r = centerRow - 5; r <= centerRow + 5; ++r) {
-                for (int c = centerCol - 5; c <= centerCol + 5; ++c) {
+            const int warDrumOverlapRange = 3; // 5x5 aura (half=2) + tower footprint overlap margin (1)
+            for (int r = centerRow - warDrumOverlapRange; r <= centerRow + warDrumOverlapRange; ++r) {
+                for (int c = centerCol - warDrumOverlapRange; c <= centerCol + warDrumOverlapRange; ++c) {
                     if (r < 0 || r >= GameMap::ROWS || c < 0 || c >= GameMap::COLS) continue;
                     const Tile& tile = gameMap.grid[r][c];
                     if (tile.type == TOWER && tile.towerIndex >= 0 && tile.towerPosRow == 1 && tile.towerPosCol == 1) {
                         const Tower& nearbyTower = towers[tile.towerIndex];
-                        if (nearbyTower.name == "War Drum Tower") {
+                        if (nearbyTower.name == "War Drum Tower" && abs(r - centerRow) <= warDrumOverlapRange && abs(c - centerCol) <= warDrumOverlapRange) {
                             finalAttackSpeed *= (1.0 + nearbyTower.hpBuffPercent / 100.0);
                             break;
                         }
@@ -676,10 +749,12 @@ public:
                     MobInstance& mob = activeMobs[i];
                     if (!mob.isAlive) continue;
                     int mobRow = (int)round(mob.posRow), mobCol = (int)round(mob.posCol);
-                    double dist = sqrt(pow(mobRow - centerRow, 2) + pow(mobCol - centerCol, 2));
-                    if (dist <= tower.hitRange && dist < bestDist) {
-                        bestDist = dist;
-                        bestMobIndex = i;
+                    if (abs(mobRow - centerRow) <= tower.hitRange && abs(mobCol - centerCol) <= tower.hitRange) {
+                        double dist = sqrt(pow(mobRow - centerRow, 2) + pow(mobCol - centerCol, 2));
+                        if (dist < bestDist) {
+                            bestDist = dist;
+                            bestMobIndex = i;
+                        }
                     }
                 }
                 if (bestMobIndex >= 0) {
@@ -688,9 +763,11 @@ public:
                     target.lastHitTime = gameTime;
                     nextAttackTime = gameTime + finalAttackSpeed;
                     towerDashFlashQueue.push_back({centerRow-1, centerCol});
+                    towerAttackFlashQueue.push_back({{centerRow-1, centerCol}, tower.name});
                 }
             }
             else if (tower.name == "Laser Tower") {
+                bool hitAny = false;
                 for (int i = 0; i < (int)activeMobs.size(); ++i) {
                     MobInstance& mob = activeMobs[i];
                     if (!mob.isAlive) continue;
@@ -699,42 +776,75 @@ public:
                     if (abs(mobRow - centerRow) <= 1) {
                         damageToMob(mob, tower.hitpoints);
                         mob.lastHitTime = gameTime;
+                        hitAny = true;
                     }
                 }
-                nextAttackTime = gameTime + finalAttackSpeed;
-                towerDashFlashQueue.push_back({centerRow-1, centerCol});
+                if (hitAny) {
+                    nextAttackTime = gameTime + finalAttackSpeed;
+                    towerDashFlashQueue.push_back({centerRow-1, centerCol});
+                    towerAttackFlashQueue.push_back({{centerRow-1, centerCol}, tower.name});
+                }
             }
             else if (tower.name == "Frost Tower") {
+                int targetMobIndex = -1;
+                double bestDist = 1e18;
                 for (int i = 0; i < (int)activeMobs.size(); ++i) {
                     MobInstance& mob = activeMobs[i];
                     if (!mob.isAlive) continue;
                     int mobRow = (int)round(mob.posRow), mobCol = (int)round(mob.posCol);
-                    if (abs(mobRow - centerRow) <= 1 && abs(mobCol - centerCol) <= 1) {
-                        damageToMob(mob, tower.hitpoints);
-                        MobModifier slowMod;
-                        slowMod.slowEffect = (int)tower.slowdownPercent;
-                        slowMod.isSlowed = true;
-                        slowMod.slowDuration = 3.0;
-                        applyMobModifier(mob, slowMod, gameTime);
-                        mob.lastHitTime = gameTime;
+                    if (abs(mobRow - centerRow) <= tower.hitRange && abs(mobCol - centerCol) <= tower.hitRange) {
+                        double dist = sqrt(pow(mobRow - centerRow, 2) + pow(mobCol - centerCol, 2));
+                        if (dist < bestDist) {
+                            bestDist = dist;
+                            targetMobIndex = i;
+                        }
                     }
                 }
-                nextAttackTime = gameTime + finalAttackSpeed;
-                towerDashFlashQueue.push_back({centerRow-1, centerCol});
+
+                if (targetMobIndex >= 0) {
+                    int targetRow = (int)round(activeMobs[targetMobIndex].posRow);
+                    int targetCol = (int)round(activeMobs[targetMobIndex].posCol);
+                    for (int i = 0; i < (int)activeMobs.size(); ++i) {
+                        MobInstance& mob = activeMobs[i];
+                        if (!mob.isAlive) continue;
+                        int mobRow = (int)round(mob.posRow), mobCol = (int)round(mob.posCol);
+                        if (abs(mobRow - targetRow) <= 1 && abs(mobCol - targetCol) <= 1) {
+                            damageToMob(mob, tower.hitpoints);
+                            MobModifier slowMod;
+                            slowMod.slowEffect = (int)tower.slowdownPercent;
+                            slowMod.isSlowed = true;
+                            slowMod.slowDuration = 3.0;
+                            applyMobModifier(mob, slowMod, gameTime);
+                            mob.lastHitTime = gameTime;
+                        }
+                    }
+                    nextAttackTime = gameTime + finalAttackSpeed;
+                    towerDashFlashQueue.push_back({centerRow-1, centerCol});
+                    towerAttackFlashQueue.push_back({{centerRow-1, centerCol}, tower.name});
+                }
             }
-            else if (tower.name == "Earthquake Tower") {
+            else if (tower.name == "Earthquake Tower" || tower.symbol == 'E') {
+                // Earthquake is a fixed 7x7 square AoE: half range = 3 around tower center.
+                const int quakeHalfRange = 3;
+                int targetCount = 0;
                 for (int i = 0; i < (int)activeMobs.size(); ++i) {
                     MobInstance& mob = activeMobs[i];
                     if (!mob.isAlive) continue;
-                    int mobRow = (int)round(mob.posRow), mobCol = (int)round(mob.posCol);
-                    double dist = sqrt(pow(mobRow - centerRow, 2) + pow(mobCol - centerCol, 2));
-                    if (dist <= tower.hitRange) {
+                    int mobRow = (int)round(mob.posRow);
+                    int mobCol = (int)round(mob.posCol);
+                    if (abs(mobRow - centerRow) <= quakeHalfRange && abs(mobCol - centerCol) <= quakeHalfRange) {
                         damageToMob(mob, tower.hitpoints);
                         mob.lastHitTime = gameTime;
+                        targetCount++;
                     }
                 }
-                nextAttackTime = gameTime + finalAttackSpeed;
-                towerDashFlashQueue.push_back({centerRow-1, centerCol});
+
+                // Only consume cooldown/animation if at least one mob was inside range.
+                if (targetCount > 0) {
+                    nextAttackTime = gameTime + finalAttackSpeed;
+                    towerDashFlashQueue.push_back({centerRow-1, centerCol});
+                    towerAttackFlashQueue.push_back({{centerRow-1, centerCol}, "Earthquake Tower"});
+                }
             }
             else if (tower.name == "Hell Tower") {
                 int bestMobIndex = -1, highestHp = 0;
@@ -742,8 +852,7 @@ public:
                     MobInstance& mob = activeMobs[i];
                     if (!mob.isAlive) continue;
                     int mobRow = (int)round(mob.posRow), mobCol = (int)round(mob.posCol);
-                    double dist = sqrt(pow(mobRow - centerRow, 2) + pow(mobCol - centerCol, 2));
-                    if (dist <= tower.hitRange && mob.health > highestHp) {
+                    if (abs(mobRow - centerRow) <= tower.hitRange && abs(mobCol - centerCol) <= tower.hitRange && mob.health > highestHp) {
                         highestHp = mob.health;
                         bestMobIndex = i;
                     }
@@ -751,13 +860,41 @@ public:
                 if (bestMobIndex >= 0) {
                     MobInstance& target = activeMobs[bestMobIndex];
                     int damage = target.health * tower.damagePercent / 100;
-                    if (damage < 50) damage = 50;
+                    if (damage < 10) damage = 10;
                     if (damage > 500) damage = 500;
-                    if (getEffectiveMobArmor(target) > 0) damage = 50;
+                    if (getEffectiveMobArmor(target) > 0) damage = 10;
                     damageToMob(target, damage);
                     target.lastHitTime = gameTime;
                     nextAttackTime = gameTime + finalAttackSpeed;
                     towerDashFlashQueue.push_back({centerRow-1, centerCol});
+                    towerAttackFlashQueue.push_back({{centerRow-1, centerCol}, tower.name});
+                }
+            }
+            else if (tower.name == "Thief Tower") {
+                int bestMobIndex = -1;
+                double bestDist = 1e18;
+                for (int i = 0; i < (int)activeMobs.size(); ++i) {
+                    MobInstance& mob = activeMobs[i];
+                    if (!mob.isAlive) continue;
+                    int mobRow = (int)round(mob.posRow), mobCol = (int)round(mob.posCol);
+                    if (abs(mobRow - centerRow) <= tower.hitRange && abs(mobCol - centerCol) <= tower.hitRange) {
+                        double dist = sqrt(pow(mobRow - centerRow, 2) + pow(mobCol - centerCol, 2));
+                        if (dist < bestDist) {
+                            bestDist = dist;
+                            bestMobIndex = i;
+                        }
+                    }
+                }
+                if (bestMobIndex >= 0) {
+                    MobInstance& target = activeMobs[bestMobIndex];
+                    bool dead = damageToMob(target, tower.hitpoints);
+                    target.lastHitTime = gameTime;
+                    if (dead) {
+                        moneyRef += getMobReward(target) * tower.currencyBonus / 100;
+                    }
+                    nextAttackTime = gameTime + finalAttackSpeed;
+                    towerDashFlashQueue.push_back({centerRow-1, centerCol});
+                    towerAttackFlashQueue.push_back({{centerRow-1, centerCol}, tower.name});
                 }
             }
             else if (tower.name == "Armor Penetration Tower") {
@@ -767,10 +904,12 @@ public:
                     MobInstance& mob = activeMobs[i];
                     if (!mob.isAlive) continue;
                     int mobRow = (int)round(mob.posRow), mobCol = (int)round(mob.posCol);
-                    double dist = sqrt(pow(mobRow - centerRow, 2) + pow(mobCol - centerCol, 2));
-                    if (dist <= tower.hitRange && dist < bestDist) {
-                        bestDist = dist;
-                        bestMobIndex = i;
+                    if (abs(mobRow - centerRow) <= tower.hitRange && abs(mobCol - centerCol) <= tower.hitRange) {
+                        double dist = sqrt(pow(mobRow - centerRow, 2) + pow(mobCol - centerCol, 2));
+                        if (dist < bestDist) {
+                            bestDist = dist;
+                            bestMobIndex = i;
+                        }
                     }
                 }
                 if (bestMobIndex >= 0) {
@@ -781,6 +920,7 @@ public:
                     target.lastHitTime = gameTime;
                     nextAttackTime = gameTime + finalAttackSpeed;
                     towerDashFlashQueue.push_back({centerRow-1, centerCol});
+                    towerAttackFlashQueue.push_back({{centerRow-1, centerCol}, tower.name});
                 }
             }
             else if (tower.name == "Vampire Tower") {
@@ -790,24 +930,31 @@ public:
                     MobInstance& mob = activeMobs[i];
                     if (!mob.isAlive) continue;
                     int mobRow = (int)round(mob.posRow), mobCol = (int)round(mob.posCol);
-                    double dist = sqrt(pow(mobRow - centerRow, 2) + pow(mobCol - centerCol, 2));
-                    if (dist <= tower.hitRange && dist < bestDist) {
-                        bestDist = dist;
-                        bestMobIndex = i;
+                    if (abs(mobRow - centerRow) <= tower.hitRange && abs(mobCol - centerCol) <= tower.hitRange) {
+                        double dist = sqrt(pow(mobRow - centerRow, 2) + pow(mobCol - centerCol, 2));
+                        if (dist < bestDist) {
+                            bestDist = dist;
+                            bestMobIndex = i;
+                        }
                     }
                 }
                 if (bestMobIndex >= 0) {
                     MobInstance& target = activeMobs[bestMobIndex];
                     int damage = tower.hitpoints;
                     bool dead = damageToMob(target, damage);
-                    if (!dead) {
-                        int healAmount = static_cast<int>(damage * tower.healPercent / 100.0);
-                        baseHPRef += healAmount;
-                        if (baseHPRef > 10) baseHPRef = 10;
+                    if (dead) {
+                        int& killCount = vampireKillCounts[key];
+                        killCount++;
+                        if (killCount >= 10) {
+                            baseHPRef += 1;
+                            if (baseHPRef > 10) baseHPRef = 10;
+                            killCount = 0;
+                        }
                     }
                     target.lastHitTime = gameTime;
                     nextAttackTime = gameTime + finalAttackSpeed;
                     towerDashFlashQueue.push_back({centerRow-1, centerCol});
+                    towerAttackFlashQueue.push_back({{centerRow-1, centerCol}, tower.name});
                 }
             }
         }
@@ -946,6 +1093,21 @@ public:
                     mob.velocityCol = (nextCol - mob.posCol) / dist * mob.modifiedSpeed;
                 }
             }
+            if (!useDemoAlgorithm) {
+                pair<int, int> basePos = findBaseCamp();
+                if (basePos.first != -1) {
+                    int roundedRow = (int)round(mob.posRow);
+                    int roundedCol = (int)round(mob.posCol);
+                    int rowGap = abs(roundedRow - basePos.first);
+                    int colGap = abs(roundedCol - basePos.second);
+                    if (max(rowGap, colGap) <= 1) {
+                        mob.isAlive = false;
+                        mob.reachedBase = true;
+                        baseHPRef -= 1;
+                        if (baseHPRef < 0) baseHPRef = 0;
+                    }
+                }
+            }
             if (routeNodes != nullptr && mob.routeStepIndex >= (int)routeNodes->size()) {
                 mob.isAlive = false;
                 mob.reachedBase = true;
@@ -1007,25 +1169,81 @@ public:
     }
 
     void renderAttackFlashes(int mapStartLine) {
-        for (const auto &cell : towerDashFlashQueue) {
-            int row = cell.first, col = cell.second;
+        for (const auto& entry : towerAttackFlashQueue) {
+            int row = entry.first.first, col = entry.first.second;
+            const string& towerName = entry.second;
             if (row < 0 || row >= GameMap::ROWS || col < 0 || col >= GameMap::COLS) continue;
-            setCursorPosition(col, mapStartLine + row);
-            setTextColor(14);
-            cout << '-';
-            resetTextColor();
+
+            if (towerName == "Earthquake Tower") {
+                static const string attackArt[3] = {"< >", "|!|", "^^^"};
+                for (int artRow = 0; artRow < 3; ++artRow) {
+                    for (int artCol = 0; artCol < 3; ++artCol) {
+                        int drawRow = row + artRow;
+                        int drawCol = col - 1 + artCol;
+                        if (drawRow < 0 || drawRow >= GameMap::ROWS || drawCol < 0 || drawCol >= GameMap::COLS) continue;
+                        setCursorPosition(drawCol, mapStartLine + drawRow);
+                        setTextColor(10);
+                        cout << attackArt[artRow][artCol];
+                        resetTextColor();
+                    }
+                }
+            } else {
+                setCursorPosition(col, mapStartLine + row);
+                
+                // Show different symbols based on tower type
+                if (towerName == "Arrow Tower") {
+                    setTextColor(14);  // Yellow
+                    cout << '-';
+                } else if (towerName == "Laser Tower") {
+                    setTextColor(14);  // Yellow
+                    cout << 'o';
+                } else if (towerName == "Frost Tower") {
+                    setTextColor(11);  // Cyan
+                    cout << '*';
+                } else if (towerName == "Armor Penetration Tower") {
+                    setTextColor(14);  // Yellow
+                    cout << '^';
+                } else if (towerName == "Hell Tower") {
+                    setTextColor(6);  // Orange-ish
+                    cout << '%';
+                } else if (towerName == "Thief Tower") {
+                    setTextColor(14);  // Yellow
+                    cout << '$';
+                } else if (towerName == "Vampire Tower") {
+                    setTextColor(12);  // Red
+                    cout << '+';
+                } else {
+                    setTextColor(14);  // Yellow (default)
+                    cout << '-';
+                }
+                resetTextColor();
+            }
         }
-        towerDashFlashQueue.clear();
+        towerAttackFlashQueue.clear();
     }
     
     void renderMobs(int mapStartLine, bool mapWasRedrawn = true) {
         vector<pair<int,int>> currentPositions;
         currentPositions.reserve(activeMobs.size());
+        map<pair<int,int>, int> cellCount;
+        map<pair<int,int>, int> cellBestMobIdx;
         for (auto &mob : activeMobs) {
             if (!mob.isAlive) continue;
             int r = (int)round(mob.posRow), c = (int)round(mob.posCol);
             if (r >= 0 && r < GameMap::ROWS && c >= 0 && c < GameMap::COLS) {
                 currentPositions.push_back({r,c});
+                pair<int,int> key = {r, c};
+                cellCount[key]++;
+                int idx = (int)(&mob - &activeMobs[0]);
+                auto it = cellBestMobIdx.find(key);
+                if (it == cellBestMobIdx.end()) {
+                    cellBestMobIdx[key] = idx;
+                } else {
+                    int prevIdx = it->second;
+                    if (activeMobs[idx].health > activeMobs[prevIdx].health) {
+                        it->second = idx;
+                    }
+                }
             }
         }
         for (auto &mob : activeMobs) {
@@ -1051,10 +1269,18 @@ public:
                 }
             }
         }
-        for (auto& mob : activeMobs) {
+        for (size_t mobIdx = 0; mobIdx < activeMobs.size(); ++mobIdx) {
+            auto& mob = activeMobs[mobIdx];
             if (!mob.isAlive) continue;
             int screenRow = (int)round(mob.posRow), screenCol = (int)round(mob.posCol);
             if (screenRow >= 0 && screenRow < GameMap::ROWS && screenCol >= 0 && screenCol < GameMap::COLS) {
+                pair<int,int> key = {screenRow, screenCol};
+                bool hasStack = (cellCount[key] > 1);
+                if (hasStack && cellBestMobIdx[key] != (int)mobIdx) {
+                    // This tile has multiple mobs; only render the highest-health one.
+                    continue;
+                }
+
                 bool isPigman = false;
                 if (mob.mobType >= 0 && mob.mobType < (int)mobTypes.size()) {
                     const string& mobName = mobTypes[mob.mobType].name;
@@ -1064,11 +1290,24 @@ public:
                     continue;
                 }
                 setCursorPosition(screenCol, mapStartLine + screenRow);
-                setTextColor(11);
                 char mobChar = mobTypes[mob.mobType].symbol;
-                if (gameTime - mob.lastHitTime < 0.18) setTextColor(12);
-                if (mobTypes[mob.mobType].name.find("Pigman") != string::npos || mobTypes[mob.mobType].name.find("pigman") != string::npos) {
-                    mobChar = 'p';
+                if (hasStack) {
+                    // Highlight crowded tiles with colored background.
+                    int foreground = 15;
+                    if (mob.modifier.isSlowed && gameTime < mob.modifier.slowedUntilTime) {
+                        foreground = 13;
+                    } else if (gameTime - mob.lastHitTime < 0.18) {
+                        foreground = 12;
+                    }
+                    int stackedColor = foreground | (4 << 4);  // red background
+                    setTextColor(stackedColor);
+                } else {
+                    if (mob.modifier.isSlowed && gameTime < mob.modifier.slowedUntilTime) {
+                        setTextColor(13);  // Purple for slowed mobs
+                    } else {
+                        setTextColor(11);
+                    }
+                    if (!(mob.modifier.isSlowed && gameTime < mob.modifier.slowedUntilTime) && gameTime - mob.lastHitTime < 0.18) setTextColor(12);
                 }
                 cout << mobChar;
                 resetTextColor();
@@ -1080,6 +1319,7 @@ public:
     
     // Getters
     int getActiveMobCount() const { return activeMobs.size(); }
+    int getTotalWaveCount() const { return (int)waves.size(); }
     vector<MobInstance>& getMobs() { return activeMobs; }
     int getCurrentWaveIndex() const { return currentWaveIndex; }
     const vector<NavigationRoute>& getNavigationRoutes() const { return navigationRoutes; }
@@ -1175,7 +1415,15 @@ public:
                 }
             }
             if (currentMobIndex >= 0 && currentMobIndex < (int)mobTypes.size()) {
-                if (line.find("HP:") != string::npos) {
+                if (line.find("Symbol:") != string::npos) {
+                    size_t pos = line.find("Symbol:");
+                    string sym = line.substr(pos + 7);
+                    while (!sym.empty() && isspace(sym[0])) sym.erase(0, 1);
+                    if (!sym.empty()) {
+                        mobTypes[currentMobIndex].symbol = sym[0];
+                    }
+                }
+                else if (line.find("HP:") != string::npos) {
                     size_t pos = line.find("HP:");
                     string numStr = line.substr(pos + 3);
                     while (!numStr.empty() && !isdigit(numStr[0])) numStr.erase(0,1);
@@ -1201,6 +1449,48 @@ public:
                 }
                 else if (line.find("Flying:") != string::npos) {
                     mobTypes[currentMobIndex].isFlying = (line.find("Yes") != string::npos);
+                }
+                else if (line.find("Slow Effect:") != string::npos) {
+                    // Example: "Slow Effect: 50% slowdown in 3x3 area for 5 seconds"
+                    size_t pos = line.find("Slow Effect:");
+                    string info = line.substr(pos + 12);
+
+                    string percent = info;
+                    while (!percent.empty() && !isdigit(percent[0])) percent.erase(0, 1);
+                    if (!percent.empty()) mobTypes[currentMobIndex].slowEffect = stod(percent);
+
+                    if (info.find("3x3") != string::npos) mobTypes[currentMobIndex].slowArea = 9;
+                    else if (info.find("full-screen") != string::npos) mobTypes[currentMobIndex].slowArea = 999;
+
+                    size_t forPos = info.find("for");
+                    if (forPos != string::npos) {
+                        string duration = info.substr(forPos + 3);
+                        while (!duration.empty() && !isdigit(duration[0]) && duration[0] != '.') duration.erase(0, 1);
+                        if (!duration.empty()) mobTypes[currentMobIndex].slowDuration = stod(duration);
+                    }
+                }
+                else if (line.find("Summon Cooldown:") != string::npos) {
+                    size_t pos = line.find("Summon Cooldown:");
+                    string numStr = line.substr(pos + 16);
+                    while (!numStr.empty() && !isdigit(numStr[0])) numStr.erase(0,1);
+                    if (!numStr.empty()) mobTypes[currentMobIndex].summonCooldown = stoi(numStr);
+                }
+                else if (line.find("Summons:") != string::npos) {
+                    size_t pos = line.find("Summons:");
+                    string numStr = line.substr(pos + 8);
+                    while (!numStr.empty() && !isdigit(numStr[0])) numStr.erase(0,1);
+                    if (!numStr.empty()) mobTypes[currentMobIndex].summonCount = stoi(numStr);
+                }
+                else if (line.find("Damage Area:") != string::npos) {
+                    size_t pos = line.find("Damage Area:");
+                    string info = line.substr(pos + 12);
+                    if (info.find("3x3") != string::npos) mobTypes[currentMobIndex].damageArea = 9;
+                }
+                else if (line.find("Attack Cooldown:") != string::npos) {
+                    size_t pos = line.find("Attack Cooldown:");
+                    string numStr = line.substr(pos + 16);
+                    while (!numStr.empty() && !isdigit(numStr[0])) numStr.erase(0,1);
+                    if (!numStr.empty()) mobTypes[currentMobIndex].attackCooldown = stoi(numStr);
                 }
             }
         }
