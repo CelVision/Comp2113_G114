@@ -804,17 +804,21 @@ public:
                 if (targetMobIndex >= 0) {
                     int targetRow = (int)round(activeMobs[targetMobIndex].posRow);
                     int targetCol = (int)round(activeMobs[targetMobIndex].posCol);
+                    int slowPercent = (int)round(tower.slowdownPercent);
+                    if (slowPercent < 0) slowPercent = 0;
+                    if (slowPercent > 95) slowPercent = 95;
                     for (int i = 0; i < (int)activeMobs.size(); ++i) {
                         MobInstance& mob = activeMobs[i];
                         if (!mob.isAlive) continue;
                         int mobRow = (int)round(mob.posRow), mobCol = (int)round(mob.posCol);
                         if (abs(mobRow - targetRow) <= 1 && abs(mobCol - targetCol) <= 1) {
                             damageToMob(mob, tower.hitpoints);
-                            MobModifier slowMod;
-                            slowMod.slowEffect = (int)tower.slowdownPercent;
-                            slowMod.isSlowed = true;
-                            slowMod.slowDuration = 3.0;
-                            applyMobModifier(mob, slowMod, gameTime);
+                            // Frost locks onto one mob, then applies slow to all mobs in a 3x3 area around that target.
+                            mob.modifier.isSlowed = true;
+                            mob.modifier.slowEffect = max(mob.modifier.slowEffect, slowPercent);
+                            mob.modifier.slowedUntilTime = max(mob.modifier.slowedUntilTime, gameTime + 3.0);
+                            mob.modifier.slowDuration = 3.0;
+                            updateMobDynamicStats(mob, gameTime);
                             mob.lastHitTime = gameTime;
                         }
                     }
@@ -1552,11 +1556,15 @@ public:
         mob.modifier.goldMultiplier *= modifier.goldMultiplier;
         mob.modifier.damageMultiplier *= modifier.damageMultiplier;
         mob.modifier.armorBonus += modifier.armorBonus;
-        mob.modifier.slowEffect += modifier.slowEffect;
         if (modifier.isSlowed) {
             mob.modifier.isSlowed = true;
-            mob.modifier.slowedUntilTime = currentGameTime + modifier.slowDuration;
-            if (modifier.slowDuration > 0) mob.modifier.slowDuration = modifier.slowDuration;
+            if (modifier.slowEffect > mob.modifier.slowEffect) {
+                mob.modifier.slowEffect = modifier.slowEffect;
+            }
+            if (modifier.slowDuration > 0) {
+                mob.modifier.slowedUntilTime = max(mob.modifier.slowedUntilTime, currentGameTime + modifier.slowDuration);
+                mob.modifier.slowDuration = modifier.slowDuration;
+            }
         }
         updateMobDynamicStats(mob, currentGameTime);
     }
