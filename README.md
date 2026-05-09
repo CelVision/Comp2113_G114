@@ -94,6 +94,12 @@ Quick Start：
 - Place towers on buildable areas (marked with '.') to defend the base camp ('M').
 - Survive waves of enemies to progress and earn a high score.
 
+Demo Mode and Assets：
+1. Enter demo as the player name to enable demo mode.
+2. In demo mode, level 1 starts with extra money and auto-places the first four tower types at fixed spots for quick verification.
+3. The script test_game.ps1 shows a simple smoke test flow that starts the game, enters demo, and exits.
+4. Demo/demo video.mp4 contains the recorded gameplay demo.
+
 ------
 Resource Packages：
 
@@ -121,6 +127,8 @@ the path restricts the enemy's movement
 
 players can put structures on these area
 
+Demo mode note: when the player name is demo, the game uses a preconfigured level 1 showcase layout to make tower behavior easier to inspect.
+
 Defensive Structures
 
 1.arrow tower("A")  cost: $50  hitpoints: 100  attack speed: 1s  hitrange: 5
@@ -131,13 +139,13 @@ a basic defensive tower, conducts single-target attack, has a middle range of at
 
 a denfensive tower that attacks all enemies in a row infront of it, unlocked in the second level
 
-3.frost tower("F")  cost: $50  hitpoints: 10  attack speed: 1s  hitrange: 5, 3*3  slowdown: 50%
+3.frost tower("F")  cost: $50  hitpoints: 10  attack speed: 1s  hitrange: 9*9 search, 3*3 effect  slowdown: 50%
 
-a defensive tower that provides the players with crowd control ability, conducts multi-target attack, unlocked in the third level
+a defensive tower that locks onto one target, then damages and slows enemies in the target's 3*3 area, unlocked in the third level
 
-4.earthquake tower("E")  cost: $200  hitpoints: 100  attack speed: 1s  hitrange: 5 (unable to attack flying enemies)
+4.earthquake tower("E")  cost: $200  hitpoints: 100  attack speed: 1s  hitrange: 9*9 (unable to attack flying enemies)
 
-a defensive tower that conducts multi-target attack to enemies in a circle range, it can kill a group of low-hp enemies at once but the cost of it is rather high, unlocked in the fourth level
+a defensive tower that attacks every enemy inside its 9*9 area centered on the tower, it can clear groups of low-hp enemies at once but the cost of it is rather high, unlocked in the fourth level
 
 5.armor penetration tower("P")  cost: $150  hitpoints: 150(double when attackinig armors)  attackspeed: 1s  hitrange: 5
 
@@ -151,7 +159,7 @@ a defensive tower that dooesn't attack but provides buffs to all towers within 5
 
 a denfensive tower that conducts single-target attack with a percentage damage, it can easily deal with high-hp enemies, it will first attack the enemy with the highest hp within range, unlocked in the seventh level
 
-8.thief tower("T")  cost: $200  hitpoints:0  bonus: +25% currency gained  range: 5 
+8.thief tower("T")  cost: $200  hitpoints:0  bonus: +50% currency gained  range: 5 
 
 a defensive tower that increase the currency gained when killing the enemies, unlocked in the eighth level
 
