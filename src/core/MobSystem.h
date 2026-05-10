@@ -1124,11 +1124,9 @@ public:
                 }
                 // Check if wave is complete
                 if (currentWaveTime > wave.totalDuration && activeMobs.empty()) {
-                    if (useDemoAlgorithm) {
-                        // Demo mode: wait for manual Z press
-                        demoManualWaveActive = false;
-                        demoWaitingForNextWave = true;
-                    }
+                    // Every mode should wait for manual Z press before next wave.
+                    demoManualWaveActive = false;
+                    demoWaitingForNextWave = true;
                     currentWaveIndex++;
                     currentWaveTime = 0;
                     demoRenderDirty = true;

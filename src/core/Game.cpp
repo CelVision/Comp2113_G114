@@ -398,7 +398,7 @@ void displayManualPage() {
         cout << string(14, ' ') << "HOW TO CONTROL" << endl;
         resetTextColor();
         cout << string(14, ' ') << "- Arrow Keys: move the map cursor." << endl;
-        cout << string(14, ' ') << "- E: send the next wave." << endl;
+        cout << string(14, ' ') << "- Z: send the next wave." << endl;
         cout << string(14, ' ') << "- Enter: plant a tower or confirm selling." << endl;
         cout << string(14, ' ') << "- Q: exit the current game and return to level select." << endl;
         cout << string(14, ' ') << "- Mobs and towers are shown in the top and bottom UI bars." << endl;
@@ -796,12 +796,17 @@ bool displayGameScreen(string playerName, int levelSelected) {
 
         bool redrawMapThisFrame = mobSystem.consumeDemoRenderDirty();
         
-           // Update header info (also show current wave remaining/total)
+           // Update header info: mobs (remaining/total in current wave) and waves (current/total)
            setCursorPosition(0, 1);
            int waveRemaining = mobSystem.getRemainingInCurrentWave();
            int waveTotal = mobSystem.getTotalSpawnsCurrentWave();
-           cout << "Player: " << playerName << " | Money: $" << setfill(' ') << setw(5) << money 
-               << " | HP: " << baseHP << "/10" << " | wave: " << waveRemaining << "/" << waveTotal << "   ";
+           int totalWaves = mobSystem.getTotalWaveCount();
+           int currentWaveNum = (totalWaves > 0) ? (mobSystem.getCurrentWaveIndex() + 1) : 0;
+           if (currentWaveNum > totalWaves) currentWaveNum = totalWaves;
+           cout << "Player: " << playerName << " | Money: $" << setfill(' ') << setw(5) << money
+               << " | HP: " << baseHP << "/10"
+               << " | Mobs: " << waveRemaining << "/" << waveTotal
+               << " | Waves: " << currentWaveNum << "/" << totalWaves << "   ";
         
         if (redrawMapThisFrame) {
             // Render game map with selection bracket at fixed position
@@ -953,8 +958,7 @@ bool displayGameScreen(string playerName, int levelSelected) {
         cout << string(75, '=') << endl;
         
         setCursorPosition(0, infoLine + 1);
-        cout << "Arrow Keys: Move | E: Next wave | 1-" << unlockedTowerCount << ": Tower | Enter: Plant/Sell | Q: Exit    Mobs: " 
-             << mobSystem.getActiveMobCount() << "              ";
+        cout << "Arrow Keys: Move | Z: Next wave | 1-" << unlockedTowerCount << ": Tower | Enter: Plant/Sell | Q: Exit                          ";
         
         // Check for overlapping towers
         vector<int> overlapping = getOverlappingTowers(gameMap, selRow, selCol);
@@ -1072,7 +1076,8 @@ bool displayGameScreen(string playerName, int levelSelected) {
                     }
                 }
             } else if (key == 'e' || key == 'E') {
-                mobSystem.startNextWave();
+                // Keep E as compatibility alias, but use manual trigger flow.
+                mobSystem.triggerNextWave();
             } else if (key >= '1' && key <= '9') {
                 // Number key - select tower for preview
                 int requestedTowerIndex = (key - '1');
