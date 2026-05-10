@@ -6,47 +6,47 @@ Level 3
   1 pigman from row 22 left side
   1 pigman from row 24 left side
 
-2.1 Houndling from row 22 left side
-  1 Houndling from row 23 left side
-  1 Houndling from row 24 left side
-  1 Werewolf from column 101 bottom side
+2.1 houndling from row 22 left side
+  1 houndling from row 23 left side
+  1 houndling from row 24 left side
+  1 werewolf from column 101 bottom side
   [wait for 3 seconds]
   1 pigman from row 22 left side
   1 pigman from row 23 left side
   1 pigman from row 24 left side
-  1 Werewolf from column 110 bottom side
+  1 werewolf from column 110 bottom side
 
-3.2 Houndling from column 101 bottom side
+3.2 houndling from column 101 bottom side
 
-4.1 Houndling from row 22 left side
-  1 Houndling from row 23 left side
-  1 Houndling from row 24 left side
+4.1 houndling from row 22 left side
+  1 houndling from row 23 left side
+  1 houndling from row 24 left side
   [wait for 1 second]
-  1 Werewolf from row 22 left side
-  1 Werewolf from row 23 left side
-  1 Werewolf from row 24 left side
+  1 werewolf from row 22 left side
+  1 werewolf from row 23 left side
+  1 werewolf from row 24 left side
   [wait for 1 second]
   1 pigman from row 22 left side
   1 pigman from row 23 left side
   1 pigman from row 24 left side
 
-5.2 Houndling from row 22 left side
-  2 Houndling from row 23 left side
-  2 Houndling from row 24 left side
-  1 Werewolf from column 101 bottom side
+5.2 houndling from row 22 left side
+  2 houndling from row 23 left side
+  2 houndling from row 24 left side
+  1 werewolf from column 101 bottom side
   [wait for 5 seconds]
   3 pigman from row 22 left side
   3 pigman from row 23 left side
   3 pigman from row 24 left side
   [wait for 5 seconds]
-  1 Werewolf from column 110 bottom side
+  1 werewolf from column 110 bottom side
   1 pigman from row 22 left side
   1 pigman from row 24 left side
 
 6.1 pigman from row 22 left side
   1 pigman from row 23 left side
   1 pigman from row 24 left side
-  1 Werewolf from column 110 bottom side
+  1 werewolf from column 110 bottom side
   [wait for 1 second]
   1 pigman from row 22 left side
   1 pigman from row 23 left side
@@ -55,11 +55,11 @@ Level 3
   1 pigman from row 22 left side
   1 pigman from row 23 left side
   1 pigman from row 24 left side
-  1 Werewolf from column 101 bottom side
+  1 werewolf from column 101 bottom side
   1 pigman from row 22 left side
   1 pigman from row 23 left side
   1 pigman from row 24 left side
-  1 Werewolf from column 110 bottom side
+  1 werewolf from column 110 bottom side
   [wait for 1 second]
   1 pigman from row 22 left side
   1 pigman from row 23 left side
@@ -68,27 +68,27 @@ Level 3
   1 pigman from row 22 left side
   1 pigman from row 23 left side
   1 pigman from row 24 left side
-  1 Werewolf from column 101 bottom side
+  1 werewolf from column 101 bottom side
 
-7.1 Houndling from row 22 left side
-  1 Houndling from row 23 left side
-  1 Houndling from row 24 left side  
+7.1 houndling from row 22 left side
+  1 houndling from row 23 left side
+  1 houndling from row 24 left side  
   [wait for 1 second]
-  1 Houndling from row 22 left side
-  1 Houndling from row 23 left side
-  1 Houndling from row 24 left side  
+  1 houndling from row 22 left side
+  1 houndling from row 23 left side
+  1 houndling from row 24 left side  
   [wait for 1 second]
-  1 Werewolf from row 22 left side
-  1 Werewolf from row 23 left side
-  1 Werewolf from row 24 left side
-  1 Werewolf from column 110 bottom side
-  1 Werewolf from column 101 bottom side
+  1 werewolf from row 22 left side
+  1 werewolf from row 23 left side
+  1 werewolf from row 24 left side
+  1 werewolf from column 110 bottom side
+  1 werewolf from column 101 bottom side
   [wait for 1 second]
-  1 Werewolf from row 22 left side
-  1 Werewolf from row 23 left side
-  1 Werewolf from row 24 left side
-  1 Werewolf from column 110 bottom side
-  1 Werewolf from column 101 bottom side
+  1 werewolf from row 22 left side
+  1 werewolf from row 23 left side
+  1 werewolf from row 24 left side
+  1 werewolf from column 110 bottom side
+  1 werewolf from column 101 bottom side
   [wait for 1 second]
   1 pigman from row 22 left side
   1 pigman from row 23 left side

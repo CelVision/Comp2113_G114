@@ -3,6 +3,7 @@
 #include <vector>
 #include <set>
 #include <iomanip>
+#include <sstream>
 #include <cstdlib>
 #include <chrono>
 #include <conio.h>
@@ -172,6 +173,247 @@ bool checkFullTowerCoverage(GameMap& gameMap, int selRow, int selCol, int& outTo
     return false;
 }
 
+string formatOneDecimal(double value) {
+    ostringstream output;
+    output << fixed << setprecision(1) << value;
+    return output.str();
+}
+
+string joinTextParts(const vector<string>& parts) {
+    if (parts.empty()) {
+        return "None";
+    }
+
+    string result;
+    for (size_t index = 0; index < parts.size(); ++index) {
+        if (index > 0) {
+            result += ", ";
+        }
+        result += parts[index];
+    }
+    return result;
+}
+
+string shortenText(const string& text, size_t maxLength) {
+    if (text.length() <= maxLength) {
+        return text;
+    }
+
+    if (maxLength <= 3) {
+        return text.substr(0, maxLength);
+    }
+
+    return text.substr(0, maxLength - 3) + "...";
+}
+
+string buildTowerSpecialText(const Tower& tower) {
+    vector<string> specialParts;
+
+    if (tower.slowdownPercent > 0) {
+        specialParts.push_back("Slow " + to_string((int)tower.slowdownPercent) + "%");
+    }
+    if (tower.damagePercent > 0) {
+        specialParts.push_back("Damage " + to_string(tower.damagePercent) + "%");
+    }
+    if (tower.currencyBonus > 0) {
+        specialParts.push_back("Gold +" + to_string(tower.currencyBonus) + "%");
+    }
+    if (tower.hpBuffPercent > 0) {
+        specialParts.push_back("Buff +" + to_string(tower.hpBuffPercent) + "%");
+    }
+    if (tower.healPercent > 0) {
+        specialParts.push_back("Heal " + formatOneDecimal(tower.healPercent) + "%");
+    }
+    if (tower.penetratesArmor) {
+        specialParts.push_back("Armor pierce");
+    }
+
+    return joinTextParts(specialParts);
+}
+
+string buildMobTraitsText(const Mob& mob) {
+    vector<string> traitParts;
+
+    traitParts.push_back(mob.isFlying ? "Flying" : "Ground");
+
+    if (mob.slowEffect > 0) {
+        string slowText = "Slow " + formatOneDecimal(mob.slowEffect) + "%";
+        if (mob.slowArea == 9) {
+            slowText += " 3x3";
+        } else if (mob.slowArea == 999) {
+            slowText += " full";
+        }
+        if (mob.slowDuration > 0) {
+            slowText += " for " + formatOneDecimal(mob.slowDuration) + "s";
+        }
+        traitParts.push_back(slowText);
+    }
+    if (mob.summonCooldown > 0 || mob.summonCount > 0) {
+        string summonText = "Summon " + to_string(mob.summonCount);
+        if (mob.summonCooldown > 0) {
+            summonText += " / " + to_string(mob.summonCooldown) + "s";
+        }
+        traitParts.push_back(summonText);
+    }
+    if (mob.damageArea > 0) {
+        traitParts.push_back("Area " + to_string(mob.damageArea == 9 ? 3 : mob.damageArea) + "x" + to_string(mob.damageArea == 9 ? 3 : mob.damageArea));
+    }
+    if (mob.attackCooldown > 0) {
+        traitParts.push_back("Atk CD " + to_string(mob.attackCooldown) + "s");
+    }
+
+    return joinTextParts(traitParts);
+}
+
+void renderDictionaryTabHeader(const string& title, bool active) {
+    if (active) {
+        setTextColor(COLOR_GREEN);
+    } else {
+        setTextColor(COLOR_GRAY);
+    }
+    cout << "[ " << title << " ]";
+    resetTextColor();
+}
+
+void renderTowerDictionary(const vector<Tower>& towers) {
+    cout << string(2, ' ') << left
+         << setw(4) << "#"
+         << setw(3) << "S"
+         << setw(22) << "Name"
+         << setw(8) << "Cost"
+         << setw(8) << "HP"
+         << setw(10) << "AtkSpd"
+         << setw(7) << "Range"
+         << setw(26) << "Special"
+         << setw(52) << "Description" << endl;
+
+    for (size_t index = 0; index < towers.size(); ++index) {
+        const Tower& tower = towers[index];
+        cout << string(2, ' ') << left
+             << setw(4) << (to_string(index + 1) + ".")
+             << setw(3) << tower.symbol
+             << setw(22) << shortenText(tower.name, 21)
+             << setw(8) << ("$" + to_string(tower.cost))
+             << setw(8) << to_string(tower.hitpoints)
+             << setw(10) << formatOneDecimal(tower.attackSpeed)
+             << setw(7) << to_string(tower.hitRange)
+             << setw(26) << shortenText(buildTowerSpecialText(tower), 25)
+             << setw(52) << shortenText(tower.description, 51) << endl;
+    }
+}
+
+void renderMobDictionary(const vector<Mob>& mobs) {
+    cout << string(2, ' ') << left
+         << setw(4) << "#"
+         << setw(3) << "S"
+         << setw(22) << "Name"
+         << setw(8) << "HP"
+         << setw(8) << "Armor"
+         << setw(10) << "Speed"
+         << setw(26) << "Traits"
+         << setw(56) << "Description" << endl;
+
+    for (size_t index = 0; index < mobs.size(); ++index) {
+        const Mob& mob = mobs[index];
+        cout << string(2, ' ') << left
+             << setw(4) << (to_string(index + 1) + ".")
+             << setw(3) << mob.symbol
+             << setw(22) << shortenText(mob.name, 21)
+             << setw(8) << to_string(mob.hp)
+             << setw(8) << to_string(mob.armor)
+             << setw(10) << formatOneDecimal(mob.speed)
+             << setw(26) << shortenText(buildMobTraitsText(mob), 25)
+             << setw(56) << shortenText(mob.description, 55) << endl;
+    }
+}
+
+void displayDictionaryPage(const vector<Tower>& towers, const vector<Mob>& mobs) {
+    int activeTab = 0;  // 0 = towers, 1 = mobs
+
+    while (true) {
+        clearScreen();
+
+        cout << "\n\n";
+        cout << string(25, ' ') << "BYTE RUSH DICTIONARY" << endl;
+        cout << string(18, ' ') << string(111, '=') << endl;
+        cout << string(10, ' ') << "Use TAB or T/M to switch pages. Press B or ESC to return." << endl;
+        cout << "\n";
+
+        cout << string(10, ' ');
+        renderDictionaryTabHeader("TOWERS", activeTab == 0);
+        cout << string(4, ' ');
+        renderDictionaryTabHeader("MOBS", activeTab == 1);
+        cout << "\n\n";
+
+        if (activeTab == 0) {
+            renderTowerDictionary(towers);
+        } else {
+            renderMobDictionary(mobs);
+        }
+
+        cout << "\n";
+        cout << string(10, ' ') << "Stats shown: cost, HP, speed, range, and special traits." << endl;
+        cout << string(10, ' ') << "Press B / ESC to go back to level select." << endl;
+
+        int key = _getch();
+        if (key == 27 || key == 'b' || key == 'B') {
+            return;
+        }
+        if (key == 9 || key == 't' || key == 'T') {
+            activeTab = 0;
+        } else if (key == 'm' || key == 'M') {
+            activeTab = 1;
+        }
+    }
+}
+
+void displayManualPage() {
+    while (true) {
+        clearScreen();
+
+        cout << "\n\n";
+        cout << string(28, ' ') << "BYTE RUSH MANUAL" << endl;
+        cout << string(18, ' ') << string(111, '=') << endl;
+        cout << "\n";
+
+        setTextColor(COLOR_GREEN);
+        cout << string(14, ' ') << "HOW TO SELECT" << endl;
+        resetTextColor();
+        cout << string(14, ' ') << "- Use the arrow keys to move across the level blocks." << endl;
+        cout << string(14, ' ') << "- Press Enter on an unlocked level to start the game." << endl;
+        cout << string(14, ' ') << "- Move to the Dictionary block to view tower and mob stats." << endl;
+        cout << string(14, ' ') << "- Move to the Manual block to read this page again." << endl;
+
+        cout << "\n";
+        setTextColor(COLOR_GREEN);
+        cout << string(14, ' ') << "HOW TO PLANT" << endl;
+        resetTextColor();
+        cout << string(14, ' ') << "- In game, press 1-9 to choose a tower you have unlocked." << endl;
+        cout << string(14, ' ') << "- Move the cursor with the arrow keys to the tile you want." << endl;
+        cout << string(14, ' ') << "- Press Enter to plant the selected tower on a valid build spot." << endl;
+        cout << string(14, ' ') << "- If the selection covers a full tower, Enter can also show sell options." << endl;
+
+        cout << "\n";
+        setTextColor(COLOR_GREEN);
+        cout << string(14, ' ') << "HOW TO CONTROL" << endl;
+        resetTextColor();
+        cout << string(14, ' ') << "- Arrow Keys: move the map cursor." << endl;
+        cout << string(14, ' ') << "- E: send the next wave." << endl;
+        cout << string(14, ' ') << "- Enter: plant a tower or confirm selling." << endl;
+        cout << string(14, ' ') << "- Q: exit the current game and return to level select." << endl;
+        cout << string(14, ' ') << "- Mobs and towers are shown in the top and bottom UI bars." << endl;
+
+        cout << "\n\n";
+        cout << string(14, ' ') << "Tip: unlocked towers depend on the level you chose." << endl;
+        cout << string(14, ' ') << "Press B or ESC to return to the level selection page." << endl;
+
+        int key = _getch();
+        if (key == 27 || key == 'b' || key == 'B') {
+            return;
+        }
+    }
+}
+
 // Display BYTE RUSH logo
 void displayLogo() {
     cout << "\n\n";
@@ -217,27 +459,44 @@ string displayStartScreen() {
 
 // Display level selection screen
 int displayLevelSelect(const string& playerName, int maxUnlockedLevel) {
+    GameMapManager infoManager;
+    vector<Tower>& infoTowers = infoManager.getAllTowers();
+    vector<Mob>& infoMobs = infoManager.getAllMobs();
+
     int selectedCol = 0;
     int selectedRow = 0;
     string statusMessage;
-    
+
     while (true) {
+        if (selectedRow == 2) {
+            if (selectedCol < 2) {
+                selectedCol = 2;
+            } else if (selectedCol > 3) {
+                selectedCol = 3;
+            }
+        }
+
+        bool specialRow = (selectedRow == 2);
+        bool dictionarySelected = specialRow && selectedCol == 2;
+        bool manualSelected = specialRow && selectedCol == 3;
+        int selectedLevel = selectedRow * LEVEL_COLS + selectedCol + 1;
+
         clearScreen();
-        
+
         cout << "\n\n";
         cout << string(30, ' ') << "SELECT YOUR LEVEL" << endl;
         cout << string(20, ' ') << string(59, '=') << endl;
         cout << "\n";
-        
+
         // Display level grid (5 columns x 2 rows)
         for (int row = 0; row < LEVEL_ROWS; row++) {
             cout << "\n\n";
             cout << string(10, ' ');
-            
+
             for (int col = 0; col < LEVEL_COLS; col++) {
                 int levelNum = row * LEVEL_COLS + col + 1;
                 bool unlocked = isLevelUnlockedForPlayer(levelNum, playerName, maxUnlockedLevel);
-                
+
                 if (selectedRow == row && selectedCol == col) {
                     setTextColor(COLOR_GREEN);
                 } else if (!unlocked) {
@@ -248,17 +507,19 @@ int displayLevelSelect(const string& playerName, int maxUnlockedLevel) {
                     resetTextColor();
                 }
             }
+
             cout << "\n" << string(10, ' ');
-            
+
             for (int col = 0; col < LEVEL_COLS; col++) {
                 int levelNum = row * LEVEL_COLS + col + 1;
                 bool unlocked = isLevelUnlockedForPlayer(levelNum, playerName, maxUnlockedLevel);
-                
+
                 if (selectedRow == row && selectedCol == col) {
                     setTextColor(COLOR_GREEN);
                 } else if (!unlocked) {
                     setTextColor(COLOR_RED);
                 }
+
                 if (unlocked && levelNum <= 9) {
                     cout << "  │ " << levelNum << "   │  ";
                 } else if (unlocked && levelNum == 10) {
@@ -266,16 +527,18 @@ int displayLevelSelect(const string& playerName, int maxUnlockedLevel) {
                 } else {
                     cout << "  │LOCK │  ";
                 }
+
                 if ((selectedRow == row && selectedCol == col) || !unlocked) {
                     resetTextColor();
                 }
             }
+
             cout << "\n" << string(10, ' ');
-            
+
             for (int col = 0; col < LEVEL_COLS; col++) {
                 int levelNum = row * LEVEL_COLS + col + 1;
                 bool unlocked = isLevelUnlockedForPlayer(levelNum, playerName, maxUnlockedLevel);
-                
+
                 if (selectedRow == row && selectedCol == col) {
                     setTextColor(COLOR_GREEN);
                 } else if (!unlocked) {
@@ -287,52 +550,124 @@ int displayLevelSelect(const string& playerName, int maxUnlockedLevel) {
                 }
             }
         }
-        
+
+        cout << "\n";
+        cout << string(26, ' ');
+        if (dictionarySelected) {
+            setTextColor(COLOR_GREEN);
+        } else {
+            setTextColor(COLOR_CYAN);
+        }
+        cout << "┌─────────────────────┐";
+        cout << string(8, ' ');
+        if (manualSelected) {
+            setTextColor(COLOR_GREEN);
+        } else {
+            setTextColor(COLOR_CYAN);
+        }
+        cout << "┌─────────────────────┐" << endl;
+
+        cout << string(26, ' ');
+        if (dictionarySelected) {
+            setTextColor(COLOR_GREEN);
+        } else {
+            setTextColor(COLOR_CYAN);
+        }
+        cout << "│      DICTIONARY     │";
+        cout << string(8, ' ');
+        if (manualSelected) {
+            setTextColor(COLOR_GREEN);
+        } else {
+            setTextColor(COLOR_CYAN);
+        }
+        cout << "│        MANUAL       │" << endl;
+
+        cout << string(26, ' ');
+        if (dictionarySelected) {
+            setTextColor(COLOR_GREEN);
+        } else {
+            setTextColor(COLOR_CYAN);
+        }
+        cout << "└─────────────────────┘";
+        cout << string(8, ' ');
+        if (manualSelected) {
+            setTextColor(COLOR_GREEN);
+        } else {
+            setTextColor(COLOR_CYAN);
+        }
+        cout << "└─────────────────────┘" << endl;
+        resetTextColor();
+
         cout << "\n\n";
         cout << string(20, ' ') << "Use ← → ↑ ↓ to navigate, ENTER to select" << endl;
+        cout << string(20, ' ') << "Move to Dictionary for stats or Manual for controls" << endl;
         if (!statusMessage.empty()) {
             setTextColor(COLOR_RED);
             cout << string(20, ' ') << statusMessage << endl;
             resetTextColor();
         }
-        
+
         // Display selection indicator
-        cout << "\n" << string(20, ' ') << "Selected: Level ";
+        cout << "\n" << string(20, ' ') << "Selected: ";
         setTextColor(COLOR_GREEN);
-        int selectedLevel = selectedRow * LEVEL_COLS + selectedCol + 1;
-        if (selectedLevel <= 9) {
-            cout << selectedLevel;
+        if (dictionarySelected) {
+            cout << "Dictionary";
+        } else if (manualSelected) {
+            cout << "Manual";
         } else {
-            cout << "∞ (Infinite)";
+            cout << "Level ";
+            if (selectedLevel <= 9) {
+                cout << selectedLevel;
+            } else {
+                cout << "∞ (Infinite)";
+            }
         }
         resetTextColor();
         cout << endl;
-        
-        // Handle input
+
         int key = _getch();
-        
+
         if (key == 13) { // Enter key
-            if (isLevelUnlockedForPlayer(selectedLevel, playerName, maxUnlockedLevel)) {
+            if (dictionarySelected) {
+                displayDictionaryPage(infoTowers, infoMobs);
+            } else if (manualSelected) {
+                displayManualPage();
+            } else if (isLevelUnlockedForPlayer(selectedLevel, playerName, maxUnlockedLevel)) {
                 return selectedLevel;
+            } else {
+                statusMessage = "Level " + to_string(selectedLevel) + " is locked. Clear level 1 first.";
             }
-            statusMessage = "Level " + to_string(selectedLevel) + " is locked. Clear level 1 first.";
         } else if (key == 224) { // Extended keys (arrow keys)
             int extKey = _getch();
-            
+
             if (extKey == 72) { // Up arrow
-                if (selectedRow > 0) {
+                if (selectedRow == 2) {
+                    selectedRow = 1;
+                    selectedCol = 2;
+                } else if (selectedRow > 0) {
                     selectedRow--;
                 }
             } else if (extKey == 80) { // Down arrow
                 if (selectedRow < LEVEL_ROWS - 1) {
                     selectedRow++;
+                } else {
+                    selectedRow = 2;
+                    selectedCol = 2;
                 }
             } else if (extKey == 75) { // Left arrow
-                if (selectedCol > 0) {
+                if (selectedRow == 2) {
+                    if (selectedCol > 2) {
+                        selectedCol--;
+                    }
+                } else if (selectedCol > 0) {
                     selectedCol--;
                 }
             } else if (extKey == 77) { // Right arrow
-                if (selectedCol < LEVEL_COLS - 1) {
+                if (selectedRow == 2) {
+                    if (selectedCol < 3) {
+                        selectedCol++;
+                    }
+                } else if (selectedCol < LEVEL_COLS - 1) {
                     selectedCol++;
                 }
             }
@@ -502,7 +837,15 @@ bool displayGameScreen(string playerName, int levelSelected) {
                     if (showFlash && previewTowerIndex < (int)towers.size() && relRow < 3) {
                         // Show ASCII art during even frames (visible)
                         if (relCol < (int)towers[previewTowerIndex].art[relRow].length()) {
-                            cout << towers[previewTowerIndex].art[relRow][relCol];
+                            // Special handling for War Drum Tower: replace middle character of top row with count
+                            if (towers[previewTowerIndex].name.find("War Drum") != string::npos && 
+                                relRow == 0 && relCol == 1) {
+                                // This is the center of the top row: show buffed tower count
+                                int buffCount = mobSystem.countWarDrumBuffedOtherTowers(selRow, selCol);
+                                cout << (char)('0' + (buffCount % 10));
+                            } else {
+                                cout << towers[previewTowerIndex].art[relRow][relCol];
+                            }
                         } else {
                             cout << "█";
                         }
@@ -563,11 +906,29 @@ bool displayGameScreen(string playerName, int levelSelected) {
                             cout << tile.displayChar;
                             resetTextColor();
                             break;
-                        case TOWER:
-                            setTextColor(COLOR_WHITE);
-                            cout << tile.displayChar;
+                        case TOWER: {
+                            int auraColor = mobSystem.getTowerAuraColor(i, j);
+                            if (auraColor == 5) {
+                                setTextColor(15 | (5 << 4));
+                            } else if (auraColor == 6) {
+                                setTextColor(15 | (6 << 4));
+                            } else {
+                                setTextColor(COLOR_WHITE);
+                            }
+                            // For War Drum, only replace the top-middle space with count.
+                            if (tile.towerIndex >= 0 && tile.towerIndex < (int)towers.size() &&
+                                towers[tile.towerIndex].name.find("War Drum") != string::npos &&
+                                tile.towerPosRow == 0 && tile.towerPosCol == 1) {
+                                int centerRow = i - tile.towerPosRow;
+                                int centerCol = j - tile.towerPosCol;
+                                int buffCount = mobSystem.countWarDrumBuffedOtherTowers(centerRow, centerCol);
+                                cout << (char)('0' + (buffCount % 10));
+                            } else {
+                                cout << tile.displayChar;
+                            }
                             resetTextColor();
                             break;
+                        }
                         case BASE:
                             setTextColor(COLOR_RED);
                             cout << "B";
@@ -611,6 +972,10 @@ bool displayGameScreen(string playerName, int levelSelected) {
             // Full tower coverage - offer sell
             if (sellModeState == 0) {
                 cout << "SELL TOWER: " << towers[coveredTowerIndex].name << " | Press ENTER to see price";
+                if (towers[coveredTowerIndex].name == "War Drum Tower") {
+                    int buffCount = mobSystem.countWarDrumBuffedOtherTowers(selRow, selCol);
+                    cout << " | Buffed towers in 5x5: " << buffCount;
+                }
                 cout << string(10, ' ');
             } else if (sellModeState == 1) {
                 // Show price

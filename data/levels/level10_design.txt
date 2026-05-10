@@ -89,10 +89,81 @@ Starting from Wave 6: Endless waves with fixed spawn count and HP scaling
 - And so on, increasing difficulty in types. All entries from row 2, 3, 4 left side.
 
 Dragon Boss Waves (every 10th wave):
-- Wave 10: 1 Dragon Boss (Type 1 → Type 2 → Type 3) from row 3 left side, HP scaled
-- Wave 20: 1 Dragon Boss (Type 1 → Type 2 → Type 3) from row 3 left side, HP scaled
-- Wave 30: 1 Dragon Boss (Type 1 → Type 2 → Type 3) from row 3 left side, HP scaled
+- Wave 10: 1 Dragon Boss (Type 1 -> Type 2 -> Type 3) from row 3 left side, HP scaled
+- Wave 20: 1 Dragon Boss (Type 1 -> Type 2 -> Type 3) from row 3 left side, HP scaled
+- Wave 30: 1 Dragon Boss (Type 1 -> Type 2 -> Type 3) from row 3 left side, HP scaled
 - Repeat cycle for higher waves. Boss enters from row 3 left side center position.
 
 [Level challenge strategy] Survive as long as possible by upgrading towers, managing resources, and adapting to increasing enemy strength. Focus on area damage and high DPS towers for endless waves. 
 
+
+Parser-friendly wave script:
+1.
+2 pigman from row 2 left side
+2 pigman from row 3 left side
+2 pigman from row 4 left side
+
+2.
+3 houndling from row 2 left side
+3 houndling from row 3 left side
+3 houndling from row 4 left side
+[wait for 3 seconds]
+2 pigman from row 2 left side
+2 pigman from row 3 left side
+2 pigman from row 4 left side
+
+3.
+2 werewolf from row 2 left side
+2 werewolf from row 3 left side
+2 werewolf from row 4 left side
+[wait for 5 seconds]
+3 houndling from row 2 left side
+3 houndling from row 3 left side
+3 houndling from row 4 left side
+
+4.
+4 pigman from row 2 left side
+4 pigman from row 3 left side
+4 pigman from row 4 left side
+[wait for 3 seconds]
+2 mini mammon from row 2 left side
+2 mini mammon from row 3 left side
+2 mini mammon from row 4 left side
+
+5.
+3 werewolf from row 2 left side
+3 werewolf from row 3 left side
+3 werewolf from row 4 left side
+[wait for 2 seconds]
+2 birdman from row 2 left side
+2 birdman from row 3 left side
+2 birdman from row 4 left side
+[wait for 5 seconds]
+5 houndling from row 2 left side
+5 houndling from row 3 left side
+5 houndling from row 4 left side
+
+6.
+5 houndling from row 2 left side
+3 werewolf from row 3 left side
+2 mini mammon from row 4 left side
+
+7.
+4 houndling from row 2 left side
+4 werewolf from row 3 left side
+2 armored mammon from row 4 left side
+
+8.
+4 pigman from row 2 left side
+3 mini mammon from row 3 left side
+3 houndling from row 4 left side
+
+9.
+4 birdman from row 2 left side
+3 batman from row 3 left side
+3 alpha wolf from row 4 left side
+
+10.
+1 dragon type 1 from row 3 left side
+1 dragon type 2 from row 3 left side
+1 dragon type 3 from row 3 left side

@@ -35,7 +35,7 @@ level 9 - Final Boss
 3 spiderman from column 77
 3 alpha wolf from column 77
 
-Boss wave
-1 Dragon from column 77
+4.
+1 dragon from column 77
 
 [Level Challenge Strategy] Use Vampire Tower heal the base and use differeent towers unlocked before to tackle with different mobs, including the final boss.

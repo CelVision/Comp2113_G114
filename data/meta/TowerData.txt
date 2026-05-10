@@ -33,7 +33,7 @@ Symbol: F
 Cost: $50
 damage: 10
 Attack Speed: 1.0s
-Hit Range: 7*7, bullet causes 3x3 aoe
+Hit Range: 9*9, attack causes 3x3 aoe
 Slowdown: 50%
 Animation: "*"turns cyan when attacking
 ASCII Art:
@@ -48,7 +48,7 @@ Symbol: E
 Cost: $200
 damage: 100
 Attack Speed: 1.0s
-Hit Range: 7*7 square, aoe
+Hit Range: 9*9 square, aoe
 ASCII Art:
   <!>
   | |
@@ -81,7 +81,7 @@ Cost: $150
 damage: 0
 Attack Speed: N/A
 Hit Range: 5*5 (buffs in 5x5 area), as long as 1 block overlaps with the range
-Bonus: +25% attack speed for nearby towers
+Bonus: +50% attack speed for nearby towers
 ASCII Art:
   [ ]
   | |
@@ -90,7 +90,7 @@ animation: in bracket shows the tower its affecting
   [n]
   | |
   ...
-Description: Doesn't attack but buffs all towers within 5x5 area with +25% attack speed
+Description: Doesn't attack but buffs all towers within 5x5 area with +50% attack speed
 Unlock Level: 6
 
 Tower 7: Hell Tower

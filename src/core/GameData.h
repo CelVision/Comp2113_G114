@@ -101,7 +101,18 @@ struct GameState {
 // ============ RESOURCE PATH HELPERS ============
 
 inline string buildMapFilePath(int level) {
-    return string("data/maps/map_for_level") + to_string(level) + ".txt";
+    string candidate;
+    string base = string("map_for_level") + to_string(level) + ".txt";
+    // Try typical locations relative to working directory or executable location
+    vector<string> prefixes = {"data/maps/", "../data/maps/", "../../data/maps/"};
+    for (const auto &p : prefixes) {
+        candidate = p + base;
+        // Use simple fopen check to avoid requiring C++17 filesystem
+        FILE *f = fopen(candidate.c_str(), "r");
+        if (f) { fclose(f); return candidate; }
+    }
+    // Fallback to original path (will likely fail later with a readable message)
+    return string("data/maps/") + base;
 }
 
 inline string buildLevelDesignPath(int level) {

@@ -7,7 +7,7 @@ Wave 1 - speed-check cluster
   6 Houndling from row 7 left side
   6 Houndling from row 13 left side
   6 Houndling from row 19 left side
-  [wait 2 second]
+  [wait for 2 seconds]
   3 Batman from row 7 left side
   3 Batman from row 13 left side
   3 Batman from row 19 left side
@@ -19,7 +19,7 @@ Wave 2 - Earthquake AoE stress
   6 Pigman from row 13 left side
   6 Pigman from row 25 left side
   4 Armored Mammon from row 19 left side
-  [wait 1 second]
+  [wait for 1 second]
   8 Pigman from row 12 left side
   8 Pigman from row 24 left side
 
@@ -30,10 +30,40 @@ Wave 3 - mixed & special interactions
   1 Dragon Type 3 from row 25 left side
   6 Spiderman from row 7 left side
   6 Spiderman from row 13 left side
-  [wait 3 second]
+  [wait for 3 seconds]
   10 Houndling from row 7 left side
 
 [Notes]
 Purpose: measure per-type tile/sec movement (Houndling/Batman fast),
 verify Earthquake deals AoE damage to clustered Mini Mammon/Pigman,
 and observe Spiderman slow interactions and Alpha Wolf summons.
+
+Parser-friendly wave script:
+1.
+6 houndling from row 7 left side
+6 houndling from row 13 left side
+6 houndling from row 19 left side
+[wait for 2 seconds]
+3 batman from row 7 left side
+3 batman from row 13 left side
+3 batman from row 19 left side
+
+2.
+4 mini mammon from row 6 left side
+4 mini mammon from row 8 left side
+6 pigman from row 13 left side
+6 pigman from row 25 left side
+4 armored mammon from row 19 left side
+[wait for 1 second]
+8 pigman from row 12 left side
+8 pigman from row 24 left side
+
+3.
+2 alpha wolf from row 7 left side
+2 alpha wolf from row 13 left side
+1 dragon type 1 from row 19 left side
+1 dragon type 3 from row 25 left side
+6 spiderman from row 7 left side
+6 spiderman from row 13 left side
+[wait for 3 seconds]
+10 houndling from row 7 left side

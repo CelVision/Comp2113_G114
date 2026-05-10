@@ -128,6 +128,7 @@ private:
     
     vector<Mob>& mobTypes;
     GameMap& gameMap;
+    const vector<Tower>* towersRef;
     vector<int> mobGolds;
     bool useDemoAlgorithm;
     bool demoManualWaveActive;
@@ -225,7 +226,7 @@ public:
     }
 
     MobSystemManager(vector<Mob>& mobTypes_, GameMap& gameMap_, int &money_, int &baseHP_, bool demoMode = false) 
-        : mobTypes(mobTypes_), gameMap(gameMap_), currentWaveIndex(0), 
+        : mobTypes(mobTypes_), gameMap(gameMap_), towersRef(nullptr), currentWaveIndex(0), 
             currentWaveTime(0), gameTime(0), moneyRef(money_), baseHPRef(baseHP_),
             useDemoAlgorithm(demoMode), demoManualWaveActive(false), demoWaitingForNextWave(true), demoRenderDirty(true) {
         loadMobGolds();
@@ -716,8 +717,76 @@ public:
         return centers;
     }
 
+    bool isTowerWithinAuraRange(int towerRow, int towerCol, int auraRow, int auraCol, int auraRadius) const {
+        int overlapRadius = auraRadius + 1;  // 3x3 tower footprint + aura overlap
+        return abs(towerRow - auraRow) <= overlapRadius && abs(towerCol - auraCol) <= overlapRadius;
+    }
+
+    bool isTowerSlowedBySpider(int towerRow, int towerCol) const {
+        for (const auto& mob : activeMobs) {
+            if (!mob.isAlive || mob.mobType < 0 || mob.mobType >= (int)mobTypes.size()) continue;
+            if (mobTypes[mob.mobType].name.find("Spiderman") == string::npos) continue;
+            int mobRow = (int)round(mob.posRow);
+            int mobCol = (int)round(mob.posCol);
+            if (isTowerWithinAuraRange(towerRow, towerCol, mobRow, mobCol, 2)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool isTowerBuffedByWarDrum(int towerRow, int towerCol) const {
+        if (towersRef == nullptr) return false;
+        for (const auto& towerCenter : getPlacedTowerCenters()) {
+            int drumRow = towerCenter.first;
+            int drumCol = towerCenter.second;
+            const Tile& drumTile = gameMap.grid[drumRow][drumCol];
+            if (drumTile.towerIndex < 0 || drumTile.towerIndex >= (int)towersRef->size()) continue;
+            const Tower& drumTower = (*towersRef)[drumTile.towerIndex];
+            if (drumTower.name.find("War Drum") == string::npos) continue;
+            if (isTowerWithinAuraRange(towerRow, towerCol, drumRow, drumCol, 2)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    int countWarDrumBuffedOtherTowers(int drumRow, int drumCol) const {
+        int count = 0;
+        for (const auto& towerCenter : getPlacedTowerCenters()) {
+            int towerRow = towerCenter.first;
+            int towerCol = towerCenter.second;
+            if (towerRow == drumRow && towerCol == drumCol) continue;
+            if (isTowerWithinAuraRange(towerRow, towerCol, drumRow, drumCol, 2)) {
+                ++count;
+            }
+        }
+        return count;
+    }
+
+    int getTowerAuraColor(int towerRow, int towerCol) const {
+        bool slowedBySpider = isTowerSlowedBySpider(towerRow, towerCol);
+        bool buffedByWarDrum = isTowerBuffedByWarDrum(towerRow, towerCol);
+        if (slowedBySpider && buffedByWarDrum) return -1;
+        if (slowedBySpider) return 5;   // purple background
+        if (buffedByWarDrum) return 6;   // orange background
+        return 0;
+    }
+
+    double getTowerAttackSpeedMultiplier(int towerRow, int towerCol) const {
+        double multiplier = 1.0;
+        if (isTowerBuffedByWarDrum(towerRow, towerCol)) {
+            multiplier *= (2.0 / 3.0);  // 50% faster hitspeed -> 1.5x speed -> 2/3 cooldown
+        }
+        if (isTowerSlowedBySpider(towerRow, towerCol)) {
+            multiplier *= 2.0;  // 50% slow -> 2x cooldown
+        }
+        return multiplier;
+    }
+
     // ============ 塔攻击逻辑（已完整，保持不变） ============
     void processTowerAttacks(const vector<Tower>& towers) {
+        towersRef = &towers;
         vector<pair<int, int>> towerCenters = getPlacedTowerCenters();
         // Build current tower key set and initialize newly-placed towers' cooldown
         unordered_set<long long> currentKeys;
@@ -749,21 +818,7 @@ public:
             const Tower& tower = towers[towerTypeIndex];
             long long key = makeTowerKey(centerRow, centerCol);
             double& nextAttackTime = towerNextAttackTime[key];
-            double finalAttackSpeed = tower.attackSpeed;
-            const int warDrumOverlapRange = 3; // 5x5 aura (half=2) + tower footprint overlap margin (1)
-            for (int r = centerRow - warDrumOverlapRange; r <= centerRow + warDrumOverlapRange; ++r) {
-                for (int c = centerCol - warDrumOverlapRange; c <= centerCol + warDrumOverlapRange; ++c) {
-                    if (r < 0 || r >= GameMap::ROWS || c < 0 || c >= GameMap::COLS) continue;
-                    const Tile& tile = gameMap.grid[r][c];
-                    if (tile.type == TOWER && tile.towerIndex >= 0 && tile.towerPosRow == 1 && tile.towerPosCol == 1) {
-                        const Tower& nearbyTower = towers[tile.towerIndex];
-                        if (nearbyTower.name == "War Drum Tower" && abs(r - centerRow) <= warDrumOverlapRange && abs(c - centerCol) <= warDrumOverlapRange) {
-                            finalAttackSpeed *= (1.0 + nearbyTower.hpBuffPercent / 100.0);
-                            break;
-                        }
-                    }
-                }
-            }
+            double finalAttackSpeed = tower.attackSpeed * getTowerAttackSpeedMultiplier(centerRow, centerCol);
             if (nextAttackTime > gameTime) continue;
 
             if (tower.name == "Arrow Tower") {
@@ -989,6 +1044,7 @@ public:
     
     // ============ 修正后的 update 函数（波次切换逻辑） ============
     void update(double dt, const vector<Tower>& towers) {
+        towersRef = &towers;
         gameTime += dt;
         
         // Both demo and regular modes wait for manual wave trigger via 'z' key
@@ -1288,7 +1344,19 @@ public:
                     switch (t.type) {
                         case PATH: setTextColor(14); cout << t.displayChar; resetTextColor(); break;
                         case BUILDABLE: setTextColor(8); cout << t.displayChar; resetTextColor(); break;
-                        case TOWER: setTextColor(15); cout << t.displayChar; resetTextColor(); break;
+                        case TOWER: {
+                            int auraColor = getTowerAuraColor(prevR, prevC);
+                            if (auraColor == 5) {
+                                setTextColor(15 | (5 << 4));
+                            } else if (auraColor == 6) {
+                                setTextColor(15 | (6 << 4));
+                            } else {
+                                setTextColor(15);
+                            }
+                            cout << t.displayChar;
+                            resetTextColor();
+                            break;
+                        }
                         case BASE: setTextColor(12); cout << 'B'; resetTextColor(); break;
                         case BLOCKED: cout << ' '; break;
                         default: cout << t.displayChar; break;
@@ -1329,7 +1397,12 @@ public:
                     int stackedColor = foreground | (4 << 4);  // red background
                     setTextColor(stackedColor);
                 } else {
-                    if (mob.modifier.isSlowed && gameTime < mob.modifier.slowedUntilTime) {
+                    int auraColor = getTowerAuraColor(screenRow, screenCol);
+                    if (auraColor == 5) {
+                        setTextColor(15 | (5 << 4));
+                    } else if (auraColor == 6) {
+                        setTextColor(15 | (6 << 4));
+                    } else if (mob.modifier.isSlowed && gameTime < mob.modifier.slowedUntilTime) {
                         setTextColor(13);  // Purple for slowed mobs
                     } else {
                         setTextColor(11);

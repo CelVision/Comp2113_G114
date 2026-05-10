@@ -93,7 +93,7 @@ public:
         
         // War Drum Tower
         towers.push_back({'D', "War Drum Tower", 150, 0, 0, 2, 
-                         {"[ ]", "| |", "..."}, "Buffs towers within range", 0, 0, 0, 25, 0, false});
+                         {"[ ]", "| |", "..."}, "Buffs towers within range", 0, 0, 0, 50, 0, false});
         
         // Vampire Tower
         towers.push_back({'V', "Vampire Tower", 400, 100, 1.0, 3, 
