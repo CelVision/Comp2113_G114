@@ -97,8 +97,18 @@ Quick Start：
 Demo Mode and Assets：
 1. Enter demo as the player name to enable demo mode.
 2. In demo mode, level 1 starts with extra money and auto-places the first four tower types at fixed spots for quick verification.
-3. The script test_game.ps1 shows a simple smoke test flow that starts the game, enters demo, and exits.
+3. The script scripts/test_game.ps1 shows a simple smoke test flow that starts the game, enters demo, and exits.
 4. Demo/demo video.mp4 contains the recorded gameplay demo.
+
+Project Structure (Sorted)：
+1. src/ - core game source code.
+2. data/ - runtime map, level, tower, and mob data files.
+3. docs/ and document/ - design notes and technical reports.
+4. scripts/ - helper scripts (for example scripts/test_game.ps1).
+5. artifacts/build/ - generated build outputs and compile logs.
+6. artifacts/diagnostics/ - generated diagnostics outputs.
+7. archive/legacy_root_sources/ - historical root-level source snapshots.
+8. archive/legacy_docs_root/ - historical root-level documentation snapshots.
 
 ------
 Resource Packages：
