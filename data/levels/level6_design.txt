@@ -1,100 +1,100 @@
-1.	 1 birdman from row 14 left side
-    1 birdman from row 15 left side
+1.	 1 birdman from row 15 left side
     1 birdman from row 16 left side
-    1 birdman from row 14 right side
+    1 birdman from row 17 left side
     1 birdman from row 15 right side
     1 birdman from row 16 right side
-    1 birdman from column 71 up side
-    1 birdman from column 71 down side
+    1 birdman from row 17 right side
+    1 birdman from column 74 up side
+    1 birdman from column 74 down side
     [wait for 3 seconds]
-    1 batman from row 14 left side
-    1 batman from row 16 left side
-    1 batman from row 14 right side
-    1 batman from row 16 right side
-    1 batman from column 71 up side
-    1 batman from column 71 down side
+    1 batman from row 15 left side
+    1 batman from row 17 left side
+    1 batman from row 15 right side
+    1 batman from row 17 right side
+    1 batman from column 74 up side
+    1 batman from column 74 down side
 
-2.	 1 birdman from row 14 left side
-    1 mini mammon from row 15 left side
-    1 birdman from row 16 left side
-    1 birdman from row 14 right side
-    1 mini mammon from row 15 right side
-    1 birdman from row 16 right side
-    1 birdman from column 71 up side
-    1 birdman from column 71 down side
+2.	 1 birdman from row 15 left side
+    1 mini mammon from row 16 left side
+    1 birdman from row 17 left side
+    1 birdman from row 15 right side
+    1 mini mammon from row 16 right side
+    1 birdman from row 17 right side
+    1 birdman from column 74 up side
+    1 birdman from column 74 down side
 
-3.	 1 pigman from row 14 left side
-    1 pigman from row 15 left side
+3.	 1 pigman from row 15 left side
     1 pigman from row 16 left side
-    1 pigman from row 14 right side
+    1 pigman from row 17 left side
     1 pigman from row 15 right side
     1 pigman from row 16 right side
-    1 pigman from column 71 up side
-    1 pigman from column 71 down side
+    1 pigman from row 17 right side
+    1 pigman from column 74 up side
+    1 pigman from column 74 down side
     [wait for 2 seconds]
-    1 birdman from row 14 left side
-    1 mini mammon from row 15 left side
-    1 birdman from row 16 left side
-    1 birdman from row 14 right side
-    1 mini mammon from row 15 right side
-    1 birdman from row 16 right side
-    1 mini mammon from column 71 up side
-    1 mini mammon from column 71 down side
+    1 birdman from row 15 left side
+    1 mini mammon from row 16 left side
+    1 birdman from row 17 left side
+    1 birdman from row 15 right side
+    1 mini mammon from row 16 right side
+    1 birdman from row 17 right side
+    1 mini mammon from column 74 up side
+    1 mini mammon from column 74 down side
     
-4.	 1 birdman from row 14 left side
-    1 werewolf from row 15 left side
-    1 birdman from row 16 left side
-    1 birdman from row 14 right side
-    1 werewolf from row 15 right side
-    1 birdman from row 16 right side
-    1 birdman from column 71 up side
-    1 birdman from column 71 down side
+4.	 1 birdman from row 15 left side
+    1 werewolf from row 16 left side
+    1 birdman from row 17 left side
+    1 birdman from row 15 right side
+    1 werewolf from row 16 right side
+    1 birdman from row 17 right side
+    1 birdman from column 74 up side
+    1 birdman from column 74 down side
 
-5.	 1 birdman from row 14 left side
-    1 birdman from row 15 left side
+5.	 1 birdman from row 15 left side
     1 birdman from row 16 left side
-    1 birdman from row 14 right side
+    1 birdman from row 17 left side
     1 birdman from row 15 right side
     1 birdman from row 16 right side
-    1 birdman from column 71 up side
-    1 birdman from column 71 down side
+    1 birdman from row 17 right side
+    1 birdman from column 74 up side
+    1 birdman from column 74 down side
     [wait for 1 second]
-    1 batman from row 14 left side
-    1 batman from row 16 left side
-    1 batman from row 14 right side
-    1 batman from row 16 right side
-    1 batman from column 71 up side
-    1 batman from column 71 down side 
+    1 batman from row 15 left side
+    1 batman from row 17 left side
+    1 batman from row 15 right side
+    1 batman from row 17 right side
+    1 batman from column 74 up side
+    1 batman from column 74 down side 
     [wait for 1 second]
-    1 birdman from row 14 left side
     1 birdman from row 15 left side
     1 birdman from row 16 left side
-    1 birdman from row 14 right side
+    1 birdman from row 17 left side
     1 birdman from row 15 right side
     1 birdman from row 16 right side
-    1 birdman from column 71 up side
-    1 birdman from column 71 down side
+    1 birdman from row 17 right side
+    1 birdman from column 74 up side
+    1 birdman from column 74 down side
     [wait for 1 second]
-    1 batman from row 14 left side
-    1 batman from row 16 left side
-    1 batman from row 14 right side
-    1 batman from row 16 right side
-    1 batman from column 71 up side
-    1 batman from column 71 down side
+    1 batman from row 15 left side
+    1 batman from row 17 left side
+    1 batman from row 15 right side
+    1 batman from row 17 right side
+    1 batman from column 74 up side
+    1 batman from column 74 down side
 
-6.	 1 birdman from row 14 left side
-    1 werewolf from row 15 left side
-    1 birdman from row 16 left side
-    1 birdman from row 14 right side
-    1 werewolf from row 15 right side
-    1 birdman from row 16 right side
-    1 birdman from column 71 up side
-    1 birdman from column 71 down side
+6.	 1 birdman from row 15 left side
+    1 werewolf from row 16 left side
+    1 birdman from row 17 left side
+    1 birdman from row 15 right side
+    1 werewolf from row 16 right side
+    1 birdman from row 17 right side
+    1 birdman from column 74 up side
+    1 birdman from column 74 down side
     [wait for 5 seconds]
-    1 armored mammon from row 14 left side
-    1 armored mammon from row 16 left side
-    1 armored mammon from row 14 right side
-    1 armored mammon from row 16 right side
+    1 armored mammon from row 15 left side
+    1 armored mammon from row 17 left side
+    1 armored mammon from row 15 right side
+    1 armored mammon from row 17 right side
 
 [Level Challenge Strategy] Use a number of arrow towers to clear up birdmans, use frozen towers to slow down batmans, use wardrums to increase the hitspeed
                            of the towers to clear up groups of flying enemies, at last build up armor penetrating towers to break the armors, note that
