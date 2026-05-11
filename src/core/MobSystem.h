@@ -48,6 +48,8 @@ struct MobInstance {
     int targetWaypoint;
     int health;
     int maxHealth;
+    int armor;
+    int maxArmor;
     bool isAlive;
     double lastUpdateTime;
     int spawnWaveId;
@@ -74,7 +76,7 @@ struct MobInstance {
                 isAlive(true), lastUpdateTime(0), spawnWaveId(wave), moveSpeed(speed),
                 modifiedSpeed(speed), routeIndex(-1), routeStepIndex(0), 
                 passedCheckpoint(false), checkpointIndex(-1), reachedBase(false),
-                lastHitTime(-9999.0), spawnPointRow((int)row), spawnPointCol((int)col), prevRenderRow((int)row), prevRenderCol((int)col), lastGridRow((int)row), lastGridCol((int)col), baseGold(0), maxHealth(0) {
+                lastHitTime(-9999.0), spawnPointRow((int)row), spawnPointCol((int)col), prevRenderRow((int)row), prevRenderCol((int)col), lastGridRow((int)row), lastGridCol((int)col), baseGold(0), maxHealth(0), armor(0), maxArmor(0) {
             velocityRow = 0;
             velocityCol = 0;
     }
@@ -165,6 +167,8 @@ public:
         MobInstance newMob(mobType, (double)finalRow, (double)finalCol, speed, currentWaveIndex);
         newMob.health = mobTypes[mobType].hp;
         newMob.maxHealth = mobTypes[mobType].hp;
+        newMob.armor = mobTypes[mobType].armor;
+        newMob.maxArmor = mobTypes[mobType].armor;
         newMob.baseGold = mobGolds[mobType];
         newMob.modifiedSpeed = speed;
         newMob.modifier = MobModifier();
@@ -838,7 +842,8 @@ public:
                 }
                 if (bestMobIndex >= 0) {
                     MobInstance& target = activeMobs[bestMobIndex];
-                    damageToMob(target, tower.hitpoints);
+                    int armorDmg = (target.armor > 0) ? 1 : 0;
+                    damageToMob(target, tower.hitpoints, armorDmg);
                     target.lastHitTime = gameTime;
                     nextAttackTime = gameTime + finalAttackSpeed;
                     towerDashFlashQueue.push_back({centerRow-1, centerCol});
@@ -853,7 +858,8 @@ public:
                     if (mobTypes[mob.mobType].isFlying) continue;
                     int mobRow = (int)round(mob.posRow);
                     if (abs(mobRow - centerRow) <= 1) {
-                        damageToMob(mob, tower.hitpoints);
+                        int armorDmg = (mob.armor > 0) ? 1 : 0;
+                        damageToMob(mob, tower.hitpoints, armorDmg);
                         mob.lastHitTime = gameTime;
                         hitAny = true;
                     }
@@ -891,7 +897,8 @@ public:
                         if (!mob.isAlive) continue;
                         int mobRow = (int)round(mob.posRow), mobCol = (int)round(mob.posCol);
                         if (abs(mobRow - targetRow) <= 1 && abs(mobCol - targetCol) <= 1) {
-                            damageToMob(mob, tower.hitpoints);
+                            int armorDmg = (mob.armor > 0) ? 1 : 0;
+                            damageToMob(mob, tower.hitpoints, armorDmg);
                             // Frost locks onto one mob, then applies slow to all mobs in a 3x3 area around that target.
                             mob.modifier.isSlowed = true;
                             mob.modifier.slowEffect = max(mob.modifier.slowEffect, slowPercent);
@@ -915,7 +922,8 @@ public:
                     int mobRow = (int)round(mob.posRow);
                     int mobCol = (int)round(mob.posCol);
                     if (abs(mobRow - centerRow) <= tower.hitRange && abs(mobCol - centerCol) <= tower.hitRange) {
-                        damageToMob(mob, tower.hitpoints);
+                        int armorDmg = (mob.armor > 0) ? 1 : 0;
+                        damageToMob(mob, tower.hitpoints, armorDmg);
                         mob.lastHitTime = gameTime;
                         targetCount++;
                     }
@@ -944,8 +952,8 @@ public:
                     int damage = target.health * tower.damagePercent / 100;
                     if (damage < 10) damage = 10;
                     if (damage > 500) damage = 500;
-                    if (getEffectiveMobArmor(target) > 0) damage = 10;
-                    damageToMob(target, damage);
+                    int armorDmg = (target.armor > 0) ? 1 : 0;
+                    damageToMob(target, damage, armorDmg);
                     target.lastHitTime = gameTime;
                     nextAttackTime = gameTime + finalAttackSpeed;
                     towerDashFlashQueue.push_back({centerRow-1, centerCol});
@@ -969,7 +977,8 @@ public:
                 }
                 if (bestMobIndex >= 0) {
                     MobInstance& target = activeMobs[bestMobIndex];
-                    bool dead = damageToMob(target, tower.hitpoints);
+                    int armorDmg = (target.armor > 0) ? 1 : 0;
+                    bool dead = damageToMob(target, tower.hitpoints, armorDmg);
                     target.lastHitTime = gameTime;
                     if (dead) {
                         moneyRef += getMobReward(target) * tower.currencyBonus / 100;
@@ -996,9 +1005,8 @@ public:
                 }
                 if (bestMobIndex >= 0) {
                     MobInstance& target = activeMobs[bestMobIndex];
-                    int baseDamage = tower.hitpoints;
-                    int finalDamage = (getEffectiveMobArmor(target) > 0) ? baseDamage * 2 : baseDamage;
-                    damageToMob(target, finalDamage);
+                    int armorDmg = (target.armor > 0) ? 100 : 0;
+                    damageToMob(target, tower.hitpoints, armorDmg);
                     target.lastHitTime = gameTime;
                     nextAttackTime = gameTime + finalAttackSpeed;
                     towerDashFlashQueue.push_back({centerRow-1, centerCol});
@@ -1023,7 +1031,8 @@ public:
                 if (bestMobIndex >= 0) {
                     MobInstance& target = activeMobs[bestMobIndex];
                     int damage = tower.hitpoints;
-                    bool dead = damageToMob(target, damage);
+                    int armorDmg = (target.armor > 0) ? 1 : 0;
+                    bool dead = damageToMob(target, damage, armorDmg);
                     if (dead) {
                         int& killCount = vampireKillCounts[key];
                         killCount++;
@@ -1062,6 +1071,8 @@ public:
                         MobInstance newMob(event.mobType, (double)event.spawnRow, (double)event.spawnCol, event.speed, currentWaveIndex);
                         newMob.health = mobTypes[event.mobType].hp;
                         newMob.maxHealth = mobTypes[event.mobType].hp;
+                        newMob.armor = mobTypes[event.mobType].armor;
+                        newMob.maxArmor = mobTypes[event.mobType].armor;
                         newMob.baseGold = mobGolds[event.mobType];
                         newMob.modifiedSpeed = event.speed;
                         newMob.modifier = MobModifier();
@@ -1389,6 +1400,8 @@ public:
                     int foreground = 15;
                     if (mob.modifier.isSlowed && gameTime < mob.modifier.slowedUntilTime) {
                         foreground = 13;
+                    } else if (mob.armor > 0) {
+                        foreground = 1;  // Deep blue for armored mobs in stack
                     } else if (gameTime - mob.lastHitTime < 0.18) {
                         foreground = 12;
                     }
@@ -1400,10 +1413,12 @@ public:
                         setTextColor(15 | (5 << 4));
                     } else if (auraColor == 6) {
                         setTextColor(15 | (6 << 4));
+                    } else if (mob.armor > 0) {
+                        setTextColor(1);  // Deep blue for armored mobs
                     } else if (mob.modifier.isSlowed && gameTime < mob.modifier.slowedUntilTime) {
                         setTextColor(13);  // Purple for slowed mobs
                     } else {
-                        setTextColor(11);
+                        setTextColor(11);  // Default yellow-green
                     }
                     if (!(mob.modifier.isSlowed && gameTime < mob.modifier.slowedUntilTime) && gameTime - mob.lastHitTime < 0.18) setTextColor(12);
                 }
@@ -1688,12 +1703,23 @@ public:
         updateMobDynamicStats(mob, currentGameTime);
     }
 
-    bool damageToMob(MobInstance& mob, int damageAmount) {
-        mob.health -= damageAmount;
-        if (mob.health <= 0) {
-            mob.health = 0;
-            mob.isAlive = false;
-            return true;
+    bool damageToMob(MobInstance& mob, int damageAmount, int armorDamage = 0) {
+        // First apply armor damage
+        if (armorDamage > 0) {
+            mob.armor -= armorDamage;
+            if (mob.armor < 0) {
+                mob.armor = 0;
+            }
+        }
+        
+        // Then apply health damage (only if armor is depleted)
+        if (mob.armor <= 0) {
+            mob.health -= damageAmount;
+            if (mob.health <= 0) {
+                mob.health = 0;
+                mob.isAlive = false;
+                return true;
+            }
         }
         return false;
     }

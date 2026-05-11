@@ -88,7 +88,7 @@ public:
                          {"<$>", "| |", "..."}, "Increases currency gained", 0, 0, 50, 0, 0, false});
         
         // Armor Penetration Tower
-        towers.push_back({'P', "Armor Penetration Tower", 150, 150, 1.0, 4, 
+        towers.push_back({'P', "Armor Penetration Tower", 150, 100, 1.0, 4, 
                          {"<^>", "| |", "==="}, "Breaks enemy armor", 0, 0, 0, 0, 0, true});
         
         // War Drum Tower
