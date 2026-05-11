@@ -63,9 +63,9 @@ Unlock Level: 4
 Tower 5: Armor Penetration Tower
 Symbol: P
 Cost: $150
-damage: 150 (double when attacking armors)
+damage: 100 (does 100 to armor instead of 1)
 Attack Speed: 1.0s
-Hit Range: 8*8
+Hit Range: 9*9
 Special: Breaks enemy armor
 ASCII Art:
   <^>
