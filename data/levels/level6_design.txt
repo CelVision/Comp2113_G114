@@ -1,4 +1,4 @@
-1.	 1 birdman from row 15 left side
+1.	1 birdman from row 15 left side
     1 birdman from row 16 left side
     1 birdman from row 17 left side
     1 birdman from row 15 right side
@@ -14,7 +14,7 @@
     1 batman from column 74 up side
     1 batman from column 74 down side
 
-2.	 1 birdman from row 15 left side
+2.	1 birdman from row 15 left side
     1 mini mammon from row 16 left side
     1 birdman from row 17 left side
     1 birdman from row 15 right side
@@ -23,7 +23,7 @@
     1 birdman from column 74 up side
     1 birdman from column 74 down side
 
-3.	 1 pigman from row 15 left side
+3.	1 pigman from row 15 left side
     1 pigman from row 16 left side
     1 pigman from row 17 left side
     1 pigman from row 15 right side
@@ -41,7 +41,7 @@
     1 mini mammon from column 74 up side
     1 mini mammon from column 74 down side
     
-4.	 1 birdman from row 15 left side
+4.	1 birdman from row 15 left side
     1 werewolf from row 16 left side
     1 birdman from row 17 left side
     1 birdman from row 15 right side
@@ -50,7 +50,7 @@
     1 birdman from column 74 up side
     1 birdman from column 74 down side
 
-5.	 1 birdman from row 15 left side
+5.	1 birdman from row 15 left side
     1 birdman from row 16 left side
     1 birdman from row 17 left side
     1 birdman from row 15 right side
@@ -82,7 +82,7 @@
     1 batman from column 74 up side
     1 batman from column 74 down side
 
-6.	 1 birdman from row 15 left side
+6.	1 birdman from row 15 left side
     1 werewolf from row 16 left side
     1 birdman from row 17 left side
     1 birdman from row 15 right side
