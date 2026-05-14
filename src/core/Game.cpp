@@ -806,7 +806,13 @@ bool displayGameScreen(string playerName, int levelSelected) {
            cout << "Player: " << playerName << " | Money: $" << setfill(' ') << setw(5) << money
                << " | HP: " << baseHP << "/10"
                << " | Mobs: " << waveRemaining << "/" << waveTotal
-               << " | Waves: " << currentWaveNum << "/" << totalWaves << "   ";
+               << " | Waves: " << currentWaveNum << "/";
+           if (levelSelected == 10) {
+               cout << "∞";
+           } else {
+               cout << totalWaves;
+           }
+           cout << "   ";
         
         if (redrawMapThisFrame) {
             // Render game map with selection bracket at fixed position

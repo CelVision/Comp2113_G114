@@ -12,6 +12,8 @@
 #include <unordered_set>
 #include <map>
 #include <cctype>
+#include <cstdlib>
+#include <ctime>
 
 using namespace std;
 
@@ -91,6 +93,7 @@ struct SpawnEvent {
     int spawnCol;
     double speed;
     int routeIndex;
+    double hpMultiplier = 1.0;
 };
 
 struct NavigationRoute {
@@ -236,7 +239,7 @@ public:
         loadMobGolds();
     }
     
-    // ============ 修正后的 loadLevelDesign ============
+    // ============ loadLevelDesign ============
     void loadLevelDesign(int level) {
         waves.clear();
         currentWaveTime = 0;
@@ -249,6 +252,11 @@ public:
 
         if (useDemoAlgorithm) {
             loadDemoLevelDesign(level);
+            return;
+        }
+
+        if (level == 10) {
+            loadLevel10Design();
             return;
         }
 
@@ -429,6 +437,235 @@ public:
             }
             wave.totalDuration += 0.2;
             waves.push_back(wave);
+        }
+    }
+
+    void loadLevel10Design() {
+        waves.clear();
+        if (mobTypes.empty()) return;
+
+        auto addSpawnGroup = [this](LevelWave& wave, double& waveTime, int count, int mobType, int spawnRow, int spawnCol, double hpMultiplier = 1.0) {
+            for (int i = 0; i < count; ++i) {
+                SpawnEvent ev;
+                ev.spawnTime = waveTime;
+                ev.mobType = mobType;
+                ev.spawnRow = spawnRow;
+                ev.spawnCol = spawnCol;
+                ev.speed = mobTypes[mobType].speed;
+                ev.routeIndex = -1;
+                ev.hpMultiplier = hpMultiplier;
+                int finalSpawnRow = spawnRow;
+                int finalSpawnCol = spawnCol;
+                if (!snapSpawnToNearestPlus(finalSpawnRow, finalSpawnCol)) continue;
+                ev.spawnRow = finalSpawnRow;
+                ev.spawnCol = finalSpawnCol;
+                ev.routeIndex = findRouteIndexForSpawn(finalSpawnRow, finalSpawnCol);
+                wave.spawnEvents.push_back(ev);
+                waveTime += 1.0;
+            }
+        };
+
+        auto addWait = [&](double& waveTime, double seconds) {
+            if (seconds > 0.0) waveTime += seconds;
+        };
+
+        auto logisticHp = [&](int waveNumber, int mobType)->double {
+            double A = 10000.0;
+            double k = 0.1;
+            double baseHp = max(1, mobTypes[mobType].hp);
+            double n = max(6, waveNumber);
+            double value = A / (1.0 + (A / baseHp - 1.0) * exp(-k * (n - 6.0)));
+            return value / baseHp;
+        };
+
+        auto bossHp = [&](int waveNumber, int mobType)->double {
+            double A = 10000.0;
+            double k = 0.1;
+            double baseHp = max(1, mobTypes[mobType].hp);
+            double stage = waveNumber / 10.0;
+            double value = A / (1.0 + (A / baseHp - 1.0) * exp(-k * (stage - 1.0)));
+            return value / baseHp;
+        };
+
+        const int leftRow2 = 1;
+        const int leftRow3 = 2;
+        const int leftRow4 = 3;
+        const int spawnCol = 0;
+
+        // Wave 1
+        {
+            LevelWave wave;
+            wave.waveNumber = 1;
+            double waveTime = 0.0;
+            addSpawnGroup(wave, waveTime, 2, 0, leftRow2, spawnCol);
+            addSpawnGroup(wave, waveTime, 2, 0, leftRow3, spawnCol);
+            addSpawnGroup(wave, waveTime, 2, 0, leftRow4, spawnCol);
+            wave.totalDuration = waveTime;
+            waves.push_back(wave);
+        }
+
+        // Wave 2
+        {
+            LevelWave wave;
+            wave.waveNumber = 2;
+            double waveTime = 0.0;
+            addSpawnGroup(wave, waveTime, 3, 1, leftRow2, spawnCol);
+            addSpawnGroup(wave, waveTime, 3, 1, leftRow3, spawnCol);
+            addSpawnGroup(wave, waveTime, 3, 1, leftRow4, spawnCol);
+            addWait(waveTime, 3.0);
+            addSpawnGroup(wave, waveTime, 2, 0, leftRow2, spawnCol);
+            addSpawnGroup(wave, waveTime, 2, 0, leftRow3, spawnCol);
+            addSpawnGroup(wave, waveTime, 2, 0, leftRow4, spawnCol);
+            wave.totalDuration = waveTime;
+            waves.push_back(wave);
+        }
+
+        // Wave 3
+        {
+            LevelWave wave;
+            wave.waveNumber = 3;
+            double waveTime = 0.0;
+            addSpawnGroup(wave, waveTime, 2, 2, leftRow2, spawnCol);
+            addSpawnGroup(wave, waveTime, 2, 2, leftRow3, spawnCol);
+            addSpawnGroup(wave, waveTime, 2, 2, leftRow4, spawnCol);
+            addWait(waveTime, 5.0);
+            addSpawnGroup(wave, waveTime, 3, 1, leftRow2, spawnCol);
+            addSpawnGroup(wave, waveTime, 3, 1, leftRow3, spawnCol);
+            addSpawnGroup(wave, waveTime, 3, 1, leftRow4, spawnCol);
+            wave.totalDuration = waveTime;
+            waves.push_back(wave);
+        }
+
+        // Wave 4
+        {
+            LevelWave wave;
+            wave.waveNumber = 4;
+            double waveTime = 0.0;
+            addSpawnGroup(wave, waveTime, 4, 0, leftRow2, spawnCol);
+            addSpawnGroup(wave, waveTime, 4, 0, leftRow3, spawnCol);
+            addSpawnGroup(wave, waveTime, 4, 0, leftRow4, spawnCol);
+            addWait(waveTime, 3.0);
+            addSpawnGroup(wave, waveTime, 2, 3, leftRow2, spawnCol);
+            addSpawnGroup(wave, waveTime, 2, 3, leftRow3, spawnCol);
+            addSpawnGroup(wave, waveTime, 2, 3, leftRow4, spawnCol);
+            wave.totalDuration = waveTime;
+            waves.push_back(wave);
+        }
+
+        // Wave 5
+        {
+            LevelWave wave;
+            wave.waveNumber = 5;
+            double waveTime = 0.0;
+            addSpawnGroup(wave, waveTime, 3, 2, leftRow2, spawnCol);
+            addSpawnGroup(wave, waveTime, 3, 2, leftRow3, spawnCol);
+            addSpawnGroup(wave, waveTime, 3, 2, leftRow4, spawnCol);
+            addWait(waveTime, 2.0);
+            addSpawnGroup(wave, waveTime, 2, 5, leftRow2, spawnCol);
+            addSpawnGroup(wave, waveTime, 2, 5, leftRow3, spawnCol);
+            addSpawnGroup(wave, waveTime, 2, 5, leftRow4, spawnCol);
+            addWait(waveTime, 5.0);
+            addSpawnGroup(wave, waveTime, 5, 1, leftRow2, spawnCol);
+            addSpawnGroup(wave, waveTime, 5, 1, leftRow3, spawnCol);
+            addSpawnGroup(wave, waveTime, 5, 1, leftRow4, spawnCol);
+            wave.totalDuration = waveTime;
+            waves.push_back(wave);
+        }
+
+        // Pre-generate waves 6-30, rest will be generated on-demand
+        for (int w = 6; w <= 30; ++w) {
+            generateLevel10Wave(w);
+        }
+    }
+
+    void generateLevel10Wave(int w) {
+        if (w < 1) return;
+        
+        auto addSpawnGroup = [this](LevelWave& wave, double& waveTime, int count, int mobType, int spawnRow, int spawnCol, double hpMultiplier = 1.0) {
+            for (int i = 0; i < count; ++i) {
+                SpawnEvent ev;
+                ev.spawnTime = waveTime;
+                ev.mobType = mobType;
+                ev.spawnRow = spawnRow;
+                ev.spawnCol = spawnCol;
+                ev.speed = mobTypes[mobType].speed;
+                ev.routeIndex = -1;
+                ev.hpMultiplier = hpMultiplier;
+                int finalSpawnRow = spawnRow;
+                int finalSpawnCol = spawnCol;
+                if (!snapSpawnToNearestPlus(finalSpawnRow, finalSpawnCol)) continue;
+                ev.spawnRow = finalSpawnRow;
+                ev.spawnCol = finalSpawnCol;
+                ev.routeIndex = findRouteIndexForSpawn(finalSpawnRow, finalSpawnCol);
+                wave.spawnEvents.push_back(ev);
+                waveTime += 1.0;
+            }
+        };
+
+        auto logisticHp = [&](int waveNumber, int mobType)->double {
+            double A = 10000.0;
+            double k = 0.1;
+            double baseHp = max(1, mobTypes[mobType].hp);
+            double n = max(6, waveNumber);
+            double value = A / (1.0 + (A / baseHp - 1.0) * exp(-k * (n - 6.0)));
+            return value / baseHp;
+        };
+
+        auto bossHp = [&](int waveNumber, int mobType)->double {
+            double A = 10000.0;
+            double k = 0.1;
+            double baseHp = max(1, mobTypes[mobType].hp);
+            double stage = waveNumber / 10.0;
+            double value = A / (1.0 + (A / baseHp - 1.0) * exp(-k * (stage - 1.0)));
+            return value / baseHp;
+        };
+
+        const int leftRow2 = 1;
+        const int leftRow3 = 2;
+        const int leftRow4 = 3;
+        const int spawnCol = 0;
+
+        LevelWave wave;
+        wave.waveNumber = w;
+        double waveTime = 0.0;
+
+        if (w % 10 == 0) {
+            double hpMult = bossHp(w, 10);
+            addSpawnGroup(wave, waveTime, 1, 10, leftRow3, spawnCol, hpMult);
+            addSpawnGroup(wave, waveTime, 1, 11, leftRow3, spawnCol, hpMult);
+            addSpawnGroup(wave, waveTime, 1, 12, leftRow3, spawnCol, hpMult);
+        } else {
+            double hpMult = logisticHp(w, 0);
+            int totalEnemies = 10 + (w - 6) / 2;
+            srand((unsigned int)(w * 12345 + 67890));
+            vector<int> availableMobs;
+            for (int m = 0; m < (int)mobTypes.size(); ++m) {
+                if (m < 10) availableMobs.push_back(m);
+            }
+            if (availableMobs.empty()) availableMobs.push_back(0);
+            
+            int remainingEnemies = totalEnemies;
+            int spawnsPerRow = max(1, totalEnemies / 3);
+            
+            addSpawnGroup(wave, waveTime, spawnsPerRow, availableMobs[rand() % availableMobs.size()], leftRow2, spawnCol, hpMult);
+            remainingEnemies -= spawnsPerRow;
+            
+            addSpawnGroup(wave, waveTime, spawnsPerRow, availableMobs[rand() % availableMobs.size()], leftRow3, spawnCol, hpMult);
+            remainingEnemies -= spawnsPerRow;
+            
+            if (remainingEnemies > 0) {
+                addSpawnGroup(wave, waveTime, remainingEnemies, availableMobs[rand() % availableMobs.size()], leftRow4, spawnCol, hpMult);
+            }
+        }
+
+        wave.totalDuration = waveTime;
+        waves.push_back(wave);
+    }
+
+    void ensureWavesGenerated(int targetWaveIndex) {
+        while ((int)waves.size() <= targetWaveIndex) {
+            int nextWave = (int)waves.size() + 1;
+            generateLevel10Wave(nextWave);
         }
     }
 
@@ -1056,6 +1293,11 @@ public:
         towersRef = &towers;
         gameTime += dt;
         
+        // For level 10: ensure next waves are generated as needed (infinite wave support)
+        if (currentWaveIndex >= 5) {
+            ensureWavesGenerated(currentWaveIndex + 5);
+        }
+        
         // Both demo and regular modes wait for manual wave trigger via 'z' key
         bool shouldSpawn = demoManualWaveActive;
         if (shouldSpawn) {
@@ -1069,13 +1311,15 @@ public:
                 for (auto& event : wave.spawnEvents) {
                     if (event.spawnTime <= currentWaveTime && event.spawnTime >= currentWaveTime - dt) {
                         MobInstance newMob(event.mobType, (double)event.spawnRow, (double)event.spawnCol, event.speed, currentWaveIndex);
-                        newMob.health = mobTypes[event.mobType].hp;
-                        newMob.maxHealth = mobTypes[event.mobType].hp;
+                        int baseHp = mobTypes[event.mobType].hp;
+                        newMob.health = max(1, (int)round(baseHp * event.hpMultiplier));
+                        newMob.maxHealth = max(1, (int)round(baseHp * event.hpMultiplier));
                         newMob.armor = mobTypes[event.mobType].armor;
                         newMob.maxArmor = mobTypes[event.mobType].armor;
                         newMob.baseGold = mobGolds[event.mobType];
                         newMob.modifiedSpeed = event.speed;
                         newMob.modifier = MobModifier();
+                        newMob.modifier.hpMultiplier = event.hpMultiplier;
                         newMob.routeIndex = event.routeIndex;
                         newMob.routeStepIndex = 0;
                         newMob.passedCheckpoint = false;
