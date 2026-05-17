@@ -13,6 +13,17 @@ Shen Ziheng  3036480402
 Ma Taoran  3036482101
 
 ------
+For grading teachers:
+
+We're still updating the game so plaese grade our newest version！！！
+
+use username test for unlcking later levels !!!
+
+Inplementaytion of key points ：
+1. Realizing function of difficulty levels by designing level 1~10
+2. Realizing Randomness, shown by level 10 endless mobs after wave 10 will be generarted randomly, with fixed number but increasing HP
+
+------
 Basic Information of Our Game：
 
 This is a tower defense game where players can accumulate currency to build defensive structures and fend off enemy attacks. There are a total of ten selectable levels, with level 10 serving as the endless mode where you can use all the unlocked buildings. Enemy attacks will become increasingly intense until they overwhelm the player. After being defeated, your score will be calculated, so aim for a higher ranking on the leaderboard. Enjoy the game!
