@@ -13,15 +13,15 @@ Shen Ziheng  3036480402
 Ma Taoran  3036482101
 
 ------
-For grading teachers:
+For grading TAs:
 
 We're still updating the game so plaese grade our newest version！！！
 
-use username test for unlcking later levels !!!
+Use "test" as username to gain access to all levels
 
 Inplementaytion of key points ：
 1. Realizing function of difficulty levels by designing level 1~10
-2. Realizing Randomness, shown by level 10 endless mobs after wave 10 will be generarted randomly, with fixed number but increasing HP
+2. Realizing Randomness, shown by level 10 endless mobs after wave 10 will be generarted randomly, with increasing difficulty
 
 ------
 Basic Information of Our Game：
